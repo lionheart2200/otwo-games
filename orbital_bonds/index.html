@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>الأفلاك الجزيئية</title>
+<link rel="stylesheet" href="../shared/otwo.css">
+<style>
+  .need { font-size: 15px; font-weight: 800; margin-bottom: 4px; }
+  .slots { display: flex; align-items: center; justify-content: center; gap: 10px; direction: ltr; margin-bottom: 12px; }
+  .slot { width: 42%; max-width: 170px; aspect-ratio: 1; border-radius: 20px; border: 2px dashed rgba(255,255,255,.3);
+    background: rgba(0,0,0,.25); display: grid; place-items: center; cursor: pointer; position: relative; transition: all .2s; }
+  .slot.fill { border-style: solid; border-color: var(--primary); }
+  .slot.ok { border-color: var(--success); background: rgba(6,214,160,.14); box-shadow: 0 0 24px rgba(6,214,160,.35); }
+  .slot.no { border-color: var(--error); background: rgba(239,71,111,.12); }
+  .slot small { position: absolute; bottom: 6px; font-size: 12px; font-weight: 800; color: var(--muted); }
+  .slot .ph { font-size: 30px; opacity: .35; }
+  .plus { font-size: 26px; font-weight: 900; color: var(--muted); }
+  .slots.merge .slot:first-child { transform: translateX(14%); }
+  .slots.merge .slot:last-child { transform: translateX(-14%); }
+  .slots.merge .plus { opacity: 0; width: 0; margin: 0 -5px; }
+  .msg { text-align: center; font-weight: 800; min-height: 26px; margin-bottom: 10px; }
+  .pick { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; direction: ltr; }
+  .orb { border: 1px solid var(--line); border-radius: 16px; background: linear-gradient(180deg, #2a3a5a, #17233b); cursor: pointer;
+    padding: 6px 2px 4px; text-align: center; color: var(--text); font: inherit; box-shadow: 0 4px 0 var(--edge); }
+  .orb:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--edge); }
+  .orb b { display: block; font-size: 13px; }
+  svg { width: 100%; height: auto; display: block; }
+  .mol { text-align: center; font-size: 26px; font-weight: 900; color: var(--success); direction: ltr; animation: pop .3s; }
+</style>
+</head>
+<body>
+<div class="app" id="app"></div>
+<script src="../shared/otwo.js"></script>
+<script src="data.js"></script>
+<script>
+'use strict';
+/* الأفلاك الجزيئية — اختر الفلكين اللذين يتداخلان لتكوين الرابطة المطلوبة.
+   سيجما: تداخل محوري (رأساً برأس). باي: تداخل جانبي (جنباً إلى جنب). */
+const CH = (window.OTWO_DATA && window.OTWO_DATA.challenges) || [];
+const ORB = { s: 'S', p_axial: 'Px', p_lateral: 'Py', p_z: 'Pz' };
+const BOND = { sigma: 'سيجما σ (تداخل محوري)', pi: 'باي π (تداخل جانبي)' };
+
+/* رسم الفلك: S كرة، Px فصّان أفقيان، Py فصّان رأسيان، Pz فصّان مائلان (نحو القارئ). */
+function orbSvg(type, state) {
+  const c1 = state === 'ok' ? '#06d6a0' : state === 'no' ? '#ef476f' : '#4fc3f7';
+  const c2 = state === 'ok' ? '#7ff5d6' : state === 'no' ? '#ff9db3' : '#ffb74d';
+  const lobe = (cx, cy, rx, ry, fill, rot = 0) =>
+    `<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="${fill}" fill-opacity=".85" stroke="#fff" stroke-opacity=".5" transform="rotate(${rot} 50 50)"/>`;
+  let body;
+  if (type === 's') body = `<circle cx="50" cy="50" r="27" fill="url(#g${state})" stroke="#fff" stroke-opacity=".5"/>`;
+  else if (type === 'p_axial') body = lobe(27, 50, 21, 13, c1) + lobe(73, 50, 21, 13, c2);
+  else if (type === 'p_lateral') body = lobe(50, 27, 13, 21, c1) + lobe(50, 73, 13, 21, c2);
+  else body = lobe(31, 50, 19, 11, c1, -45) + lobe(69, 50, 19, 11, c2, -45);
+  return `<svg viewBox="0 0 100 100"><defs><radialGradient id="g${state}" cx="35%" cy="30%">
+    <stop offset="0" stop-color="#fff" stop-opacity=".9"/><stop offset="1" stop-color="${c1}"/></radialGradient></defs>
+    <line x1="6" y1="50" x2="94" y2="50" stroke="#fff" stroke-opacity=".12" stroke-dasharray="3 3"/>${body}
+    <circle cx="50" cy="50" r="2.6" fill="#fff"/></svg>`;
+}
+
+const app = OT.$('#app');
+let i = 0, a = null, b = null, solved = new Set(), tries = 0;
+
+function shell() {
+  app.appendChild(OT.topbar('الأفلاك الجزيئية', [
+    'اقرأ التحدي، ثم اضغط على الفلكين المناسبين ليملآ الخانتين.',
+    '<b>سيجما σ:</b> تداخل رأساً برأس على محور الرابطة (S مع S، S مع Px، Px مع Px).',
+    '<b>باي π:</b> تداخل جنباً إلى جنب لفلكين متوازيين (Py مع Py، Pz مع Pz).',
+    'اضغط على خانة ممتلئة لتفريغها.',
+  ]));
+  if (!CH.length) { app.insertAdjacentHTML('beforeend', '<div class="card center muted">لا توجد تحديات. أضِفها في ملف data.js.</div>'); return false; }
+  app.insertAdjacentHTML('beforeend', `
+    <div class="stats"><div class="stat"><b id="sN"></b><span>التحدي</span></div>
+      <div class="stat"><b id="sOk">0</b><span>أُنجز</span></div><div class="stat"><b id="sTry">0</b><span>المحاولات</span></div></div>
+    <div class="bar" style="margin-bottom:12px"><i id="prog"></i></div>
+    <div class="card"><div class="need" id="cName"></div><span class="chip gold" id="cBond"></span>
+      <p class="muted" id="cDesc" style="margin:8px 0 0;font-size:13.5px;line-height:1.7"></p></div>
+    <div class="slots" id="slots"><div class="slot" data-s="0"></div><div class="plus">+</div><div class="slot" data-s="1"></div></div>
+    <div class="msg" id="msg"></div>
+    <div class="card"><div class="muted center" style="font-size:13px;margin-bottom:8px">اضغط على فلك ليملأ الخانة التالية:</div>
+      <div class="pick" id="pick"></div></div>
+    <div class="row"><button class="btn ghost" id="bClear">↺ إعادة</button><button class="btn" id="bNext">التالي ◀</button></div>`);
+  for (const k of Object.keys(ORB)) {
+    const btn = OT.el('button', { class: 'orb' }, orbSvg(k, 'idle') + `<b>${ORB[k]}</b>`);
+    btn.onclick = () => choose(k);
+    OT.$('#pick').appendChild(btn);
+  }
+  for (const s of OT.$$('.slot')) s.onclick = () => { if (+s.dataset.s === 0) a = null; else b = null; render(); };
+  OT.$('#bClear').onclick = () => { a = b = null; render(); };
+  OT.$('#bNext').onclick = next;
+  return true;
+}
+function choose(k) {
+  if (a && b) { a = k; b = null; } else if (!a) a = k; else b = k;
+  OT.sfx.tap(); render(true);
+}
+function next() { i = (i + 1) % CH.length; a = b = null; render(); }
+function render(check) {
+  const c = CH[i], req = c.requiredOrbitals || [];
+  let state = 'idle';
+  if (a && b) {
+    const ok = req.length === 2 && ((a === req[0] && b === req[1]) || (a === req[1] && b === req[0]));
+    state = ok ? 'ok' : 'no';
+    if (check) {
+      tries++;
+      if (ok) { OT.sfx.win(); if (!solved.has(i)) { solved.add(i); if (solved.size === CH.length) setTimeout(done, 700); } }
+      else OT.sfx.bad();
+    }
+  }
+  OT.$('#sN').textContent = `${i + 1} / ${CH.length}`;
+  OT.$('#sOk').textContent = solved.size; OT.$('#sTry').textContent = tries;
+  OT.$('#prog').style.width = (solved.size / CH.length * 100) + '%';
+  OT.$('#cName').textContent = c.name || 'تحدٍّ';
+  OT.$('#cBond').textContent = 'الرابطة المطلوبة: ' + (BOND[c.bondType] || BOND.sigma);
+  OT.$('#cDesc').textContent = c.description || '';
+  [a, b].forEach((v, n) => {
+    const s = OT.$$('.slot')[n];
+    s.className = 'slot' + (v ? ' fill' : '') + (state !== 'idle' ? ' ' + state : '');
+    s.innerHTML = v ? orbSvg(v, state) + `<small>${ORB[v]}</small>` : '<span class="ph">؟</span>';
+    if (state === 'no' && check) s.classList.add('shake');
+  });
+  OT.$('#slots').classList.toggle('merge', state === 'ok');
+  const m = OT.$('#msg');
+  if (state === 'ok') m.innerHTML = `<div style="color:var(--success)">✅ أحسنت! رابطة ${c.bondType === 'pi' ? 'باي' : 'سيجما'} ناجحة</div><div class="mol">${OT.esc(c.moleculeName || '')}</div>`;
+  else if (state === 'no') m.innerHTML = '<span style="color:var(--error)">❌ هذا التداخل لا يطابق التحدي. جرّب فلكين آخرين.</span>';
+  else m.innerHTML = '<span class="muted">اختر فلكين لترى النتيجة 👇</span>';
+}
+function done() {
+  OT.confetti();
+  OT.modal({ icon: '🏆', title: 'أنجزت كل التحديات!', lines: [`عدد المحاولات: <b>${tries}</b>`,
+    tries <= CH.length ? 'علامة كاملة من أول محاولة! 🌟' : 'جرّب مرة أخرى بمحاولات أقل.'],
+    buttons: [{ label: 'العب مجدداً', cls: 'gold', onClick: () => { solved.clear(); tries = 0; i = 0; a = b = null; render(); } }] });
+}
+if (shell()) render();
+</script>
+</body>
+</html>

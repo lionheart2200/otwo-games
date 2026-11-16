@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>كلمات متقاطعة</title>
+<link rel="stylesheet" href="../shared/otwo.css">
+<style>
+  .cats { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+  .gridwrap { display: flex; justify-content: center; margin-bottom: 10px; }
+  .grid { display: grid; gap: 3px; direction: rtl; }
+  .c { width: var(--s); height: var(--s); border-radius: 7px; position: relative; display: grid; place-items: center;
+    font-size: calc(var(--s) * .52); font-weight: 900; }
+  .c.on { background: #f4f8ff; color: #10202f; cursor: pointer; box-shadow: 0 2px 0 rgba(0,0,0,.4); }
+  .c.word { background: #bfe9ff; } .c.act { background: #ffd166; outline: 2px solid #f59e0b; }
+  .c.bad { background: #ffc2cf; color: #b3123a; } .c.good { background: #b8f5df; color: #05624a; }
+  .c small { position: absolute; top: 1px; right: 3px; font-size: calc(var(--s) * .24); font-weight: 800; color: #51627a; line-height: 1; }
+  .clue { padding: 9px 12px; border-radius: 12px; background: rgba(255,183,3,.10); border-inline-start: 4px solid var(--accent);
+    font-size: 14px; font-weight: 700; min-height: 42px; margin-bottom: 10px; line-height: 1.6; }
+  .kb { display: grid; gap: 4px; margin-bottom: 8px; direction: rtl; }
+  .kr { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 3px; }
+  .k { border: 0; border-radius: 8px; height: 40px; font: inherit; font-size: 17px; font-weight: 800; color: #fff; cursor: pointer; padding: 0;
+    background: linear-gradient(180deg, #2a3a5a, #17233b); box-shadow: 0 3px 0 var(--edge); }
+  .k:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--edge); background: var(--primary-deep); }
+  .clues { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .clues h4 { margin: 0 0 6px; font-size: 13px; color: var(--primary); }
+  .clues div.i { font-size: 12.5px; padding: 5px 6px; border-radius: 8px; cursor: pointer; line-height: 1.5; }
+  .clues div.i.sel { background: rgba(0,180,216,.16); } .clues div.i.done { color: var(--success); text-decoration: line-through; opacity: .8; }
+</style>
+</head>
+<body>
+<div class="app" id="app"></div>
+<script src="../shared/otwo.js"></script>
+<script src="data.js"></script>
+<script>
+'use strict';
+/* كلمات متقاطعة عربية — اللغز يُبنى تلقائياً من بنك الكلمات (حتى 8 كلمات متقاطعة).
+   الشبكة من اليمين إلى اليسار: الكلمة الأفقية تُقرأ يميناً ← يساراً، والعمودية من أعلى لأسفل. */
+const norm = (s) => String(s || '').replace(/[ً-ْـ\s]/g, '').replace(/[أإآ]/g, 'ا');
+const BANK = ((window.OTWO_DATA && window.OTWO_DATA.words) || [])
+  .map((w) => ({ word: norm(w.word), clue: w.clue || '', category: (w.category || '').trim() })).filter((w) => w.word.length >= 2);
+const CATS = [...new Set(BANK.map((w) => w.category).filter(Boolean))].sort();
+const G = 20, MAXW = 8;
+const KEYS = ['ض ص ث ق ف غ ع ه خ ح ج', 'ش س ي ب ل ا ت ن م ك ط', 'ذ ء ؤ ر ى ة و ز ظ د ئ'];
+const app = OT.$('#app');
+let P, fill, act, cat = '', hints, seconds, timer, solved;
+
+/* ── بناء اللغز (نفس خوارزمية التطبيق) ── */
+function build(pool) {
+  const seen = new Set(), valid = [];
+  for (const w of pool) if (!seen.has(w.word)) { seen.add(w.word); valid.push(w); }
+  if (!valid.length) return null;
+  const sh = OT.shuffle(valid), byLen = sh.slice().sort((a, b) => b.word.length - a.word.length);
+  const first = OT.pick(byLen.slice(0, Math.min(5, byLen.length)));
+  const grid = Array.from({ length: G }, () => Array(G).fill(null)), placed = [];
+  const put = (w, r, c, d) => { [...w.word].forEach((ch, i) => { d === 'h' ? grid[r][c + i] = ch : grid[r + i][c] = ch; }); placed.push({ w, r, c, d }); };
+  const can = (w, r, c, d) => {
+    const L = [...w.word];
+    if (r < 0 || c < 0) return false;
+    if (d === 'h' && c + L.length > G) return false;
+    if (d === 'v' && r + L.length > G) return false;
+    if (d === 'h') { if (c - 1 >= 0 && grid[r][c - 1]) return false; if (c + L.length < G && grid[r][c + L.length]) return false; }
+    else { if (r - 1 >= 0 && grid[r - 1][c]) return false; if (r + L.length < G && grid[r + L.length][c]) return false; }
+    let x = 0;
+    for (let i = 0; i < L.length; i++) {
+      const rr = d === 'v' ? r + i : r, cc = d === 'h' ? c + i : c, e = grid[rr][cc];
+      if (e) { if (e !== L[i]) return false; x++; }
+      else if (d === 'h') { if ((rr - 1 >= 0 && grid[rr - 1][cc]) || (rr + 1 < G && grid[rr + 1][cc])) return false; }
+      else { if ((cc - 1 >= 0 && grid[rr][cc - 1]) || (cc + 1 < G && grid[rr][cc + 1])) return false; }
+    }
+    return x >= 1;
+  };
+  put(first, G >> 1, (G - first.word.length) >> 1, 'h');
+  for (const w of sh) {
+    if (w === first) continue;
+    if (placed.length >= MAXW) break;
+    const spots = [], L = [...w.word];
+    for (let i = 0; i < L.length; i++) for (const p of placed) [...p.w.word].forEach((ch, j) => {
+      if (ch !== L[i]) return;
+      const cr = p.d === 'h' ? p.r : p.r + j, cc = p.d === 'h' ? p.c + j : p.c, nd = p.d === 'h' ? 'v' : 'h';
+      const nr = nd === 'v' ? cr - i : cr, nc = nd === 'h' ? cc - i : cc;
+      if (can(w, nr, nc, nd)) spots.push([nr, nc, nd]);
+    });
+    if (spots.length) { const s = OT.pick(spots); put(w, s[0], s[1], s[2]); }
+  }
+  let r0 = G, c0 = G, r1 = 0, c1 = 0;
+  for (let r = 0; r < G; r++) for (let c = 0; c < G; c++) if (grid[r][c]) { r0 = Math.min(r0, r); c0 = Math.min(c0, c); r1 = Math.max(r1, r); c1 = Math.max(c1, c); }
+  const words = placed.map((p) => ({ ...p, r: p.r - r0, c: p.c - c0, L: [...p.w.word] })).sort((a, b) => a.r - b.r || a.c - b.c);
+  const nums = {}; let n = 1;
+  for (const w of words) { const k = w.r + ',' + w.c; if (!nums[k]) nums[k] = n++; w.n = nums[k]; }
+  const sol = {};
+  for (const w of words) { w.cells = w.L.map((_, i) => w.d === 'h' ? [w.r, w.c + i] : [w.r + i, w.c]); w.cells.forEach(([r, c], i) => { sol[r + ',' + c] = w.L[i]; }); }
+  return { words, rows: r1 - r0 + 1, cols: c1 - c0 + 1, sol, nums };
+}
+
+function menu() {
+  clearInterval(timer);
+  app.innerHTML = '';
+  app.appendChild(OT.topbar('كلمات متقاطعة', HELP));
+  if (BANK.length < 4) { app.insertAdjacentHTML('beforeend', '<div class="card center muted">لا توجد كلمات كافية. أضِف 4 كلمات على الأقل في ملف data.js.</div>'); return; }
+  app.insertAdjacentHTML('beforeend', `<div class="center" style="padding:14px 0"><div style="font-size:56px">🧩</div>
+    <p class="muted" style="margin:6px 0 14px">اختر تصنيفاً، ويُبنى لك لغز جديد في كل مرة</p></div><div class="cats" id="cats"></div>`);
+  const add = (label, value, n) => { const b = OT.el('button', { class: 'btn' + (value ? ' ghost' : ' gold') }, `${OT.esc(label)} <span style="opacity:.7">(${n})</span>`);
+    b.onclick = () => n >= 4 ? start(value) : OT.toast('هذا التصنيف يحتاج 4 كلمات على الأقل.', 'bad'); OT.$('#cats').appendChild(b); };
+  add('كل التصنيفات', '', BANK.length);
+  for (const c of CATS) add(c, c, BANK.filter((w) => w.category === c).length);
+}
+const HELP = ['اضغط على خانة أو على تعريف لاختيار كلمة، ثم اكتب بالحروف في الأسفل.',
+  'الكلمة الأفقية تُكتب من اليمين إلى اليسار، والعمودية من أعلى إلى أسفل.',
+  'اضغط الخانة نفسها مرة ثانية للتبديل بين الأفقي والعمودي عند التقاطع.',
+  '«تحقّق» يلوّن الصحيح والخطأ، و«تلميح» يكشف حرف الخانة المحدّدة.'];
+
+function start(c) {
+  cat = c;
+  const pool = c ? BANK.filter((w) => w.category === c) : BANK;
+  let best = null;
+  for (let t = 0; t < 30; t++) { const p = build(pool); if (p && (!best || p.words.length > best.words.length)) best = p; if (best && best.words.length >= Math.min(MAXW, pool.length)) break; }
+  P = best; fill = {}; hints = 0; seconds = 0; solved = false; act = { w: 0, i: 0 };
+  app.innerHTML = '';
+  app.appendChild(OT.topbar(c || 'كلمات متقاطعة', HELP));
+  app.insertAdjacentHTML('beforeend', `
+    <div class="stats"><div class="stat"><b id="sD">0</b><span>كلمات محلولة</span></div><div class="stat"><b id="sT">0 ث</b><span>الوقت</span></div>
+      <div class="stat"><b id="sH">0</b><span>تلميحات</span></div></div>
+    <div class="gridwrap"><div class="grid" id="grid"></div></div>
+    <div class="clue" id="clue"></div>
+    <div class="kb" id="kb"></div>
+    <div class="row" style="margin-bottom:12px"><button class="btn green" id="bChk">✔ تحقّق</button><button class="btn ghost" id="bHint">💡 تلميح</button>
+      <button class="btn ghost" id="bDel">⌫ مسح</button></div>
+    <div class="card"><div class="clues"><div><h4>⬅ أفقي</h4><div id="cH"></div></div><div><h4>⬇ عمودي</h4><div id="cV"></div></div></div></div>
+    <div class="row"><button class="btn ghost" id="bMenu">◀ التصنيفات</button><button class="btn" id="bNew">🔀 لغز جديد</button></div>`);
+  for (const row of KEYS) { const kr = OT.el('div', { class: 'kr' });
+    for (const ch of row.split(' ')) { const k = OT.el('button', { class: 'k' }, ch); k.onclick = () => type(ch); kr.appendChild(k); }
+    OT.$('#kb').appendChild(kr); }
+  OT.$('#bChk').onclick = checkAll; OT.$('#bHint').onclick = hint; OT.$('#bDel').onclick = back;
+  OT.$('#bMenu').onclick = menu; OT.$('#bNew').onclick = () => start(cat);
+  timer = setInterval(() => { if (!solved) { seconds++; OT.$('#sT').textContent = OT.fmtTime(seconds); } }, 1000);
+  window.onkeydown = (e) => { if (e.key === 'Backspace') { e.preventDefault(); back(); } else if (/^[ء-ي]$/.test(e.key)) type(e.key); };
+  layout(); draw();
+}
+function layout() {
+  const s = Math.floor(Math.min((Math.min(app.clientWidth, 560) - 4) / P.cols, 46)) - 3;
+  const g = OT.$('#grid'); g.style.setProperty('--s', Math.max(18, s) + 'px'); g.style.gridTemplateColumns = `repeat(${P.cols}, var(--s))`;
+}
+window.addEventListener('resize', () => { if (P && OT.$('#grid')) layout(); });
+const key = (r, c) => r + ',' + c;
+const wordOk = (w) => w.cells.every(([r, c], i) => norm(fill[key(r, c)]) === w.L[i]);
+function draw(marks) {
+  const g = OT.$('#grid'), W = P.words[act.w], cur = W.cells[act.i];
+  g.innerHTML = '';
+  for (let r = 0; r < P.rows; r++) for (let c = 0; c < P.cols; c++) {
+    const k = key(r, c);
+    if (!P.sol[k]) { g.appendChild(OT.el('div', { class: 'c' })); continue; }
+    let cls = 'c on';
+    if (W.cells.some(([a, b]) => a === r && b === c)) cls += ' word';
+    if (cur[0] === r && cur[1] === c) cls += ' act';
+    if (marks && fill[k]) cls += norm(fill[k]) === P.sol[k] ? ' good' : ' bad';
+    const d = OT.el('div', { class: cls }, (P.nums[k] ? `<small>${P.nums[k]}</small>` : '') + (fill[k] || ''));
+    d.onclick = () => pick(r, c);
+    g.appendChild(d);
+  }
+  OT.$('#clue').innerHTML = `<b style="color:var(--accent)">${W.n} ${W.d === 'h' ? 'أفقي' : 'عمودي'}:</b> ${OT.esc(W.w.clue)} <span class="muted">(${W.L.length} حروف)</span>`;
+  for (const [id, d] of [['#cH', 'h'], ['#cV', 'v']]) {
+    const box = OT.$(id); box.innerHTML = '';
+    P.words.forEach((w, n) => { if (w.d !== d) return;
+      const it = OT.el('div', { class: 'i' + (n === act.w ? ' sel' : '') + (wordOk(w) ? ' done' : '') }, `<b>${w.n}.</b> ${OT.esc(w.w.clue)}`);
+      it.onclick = () => { act = { w: n, i: firstEmpty(w) }; OT.sfx.tap(); draw(); }; box.appendChild(it); });
+  }
+  OT.$('#sD').textContent = `${P.words.filter(wordOk).length} / ${P.words.length}`; OT.$('#sH').textContent = hints;
+}
+const firstEmpty = (w) => { const i = w.cells.findIndex(([r, c]) => !fill[key(r, c)]); return i < 0 ? 0 : i; };
+function pick(r, c) {
+  const hits = P.words.map((w, n) => [n, w.cells.findIndex(([a, b]) => a === r && b === c)]).filter(([, i]) => i >= 0);
+  if (!hits.length) return;
+  const cur = P.words[act.w].cells[act.i], same = cur[0] === r && cur[1] === c;
+  let h = hits.find(([n]) => n === act.w);
+  if (!h || (same && hits.length > 1)) h = hits.find(([n]) => n !== act.w) || hits[0];
+  act = { w: h[0], i: h[1] }; OT.sfx.tap(); draw();
+}
+function type(ch) {
+  if (solved) return;
+  const W = P.words[act.w], [r, c] = W.cells[act.i];
+  fill[key(r, c)] = ch; OT.sfx.tap();
+  if (act.i < W.cells.length - 1) act.i++;
+  draw();
+  if (Object.keys(P.sol).every((k) => norm(fill[k]) === P.sol[k])) win();
+}
+function back() {
+  const W = P.words[act.w], [r, c] = W.cells[act.i];
+  if (fill[key(r, c)]) delete fill[key(r, c)];
+  else if (act.i > 0) { act.i--; const [a, b] = W.cells[act.i]; delete fill[key(a, b)]; }
+  draw();
+}
+function hint() {
+  const W = P.words[act.w], [r, c] = W.cells[act.i];
+  fill[key(r, c)] = P.sol[key(r, c)]; hints++; OT.sfx.ok();
+  if (act.i < W.cells.length - 1) act.i++;
+  draw();
+  if (Object.keys(P.sol).every((k) => norm(fill[k]) === P.sol[k])) win();
+}
+function checkAll() {
+  draw(true);
+  const done = P.words.filter(wordOk).length;
+  if (done === P.words.length) return win();
+  OT.toast(done ? `أحسنت! ${done} من ${P.words.length} كلمات صحيحة. واصل المحاولة.` : 'بعض الكلمات تحتاج مراجعة. واصل المحاولة.', done ? 'ok' : '');
+}
+function win() {
+  if (solved) return; solved = true; clearInterval(timer); draw(true); OT.sfx.win(); OT.confetti();
+  OT.modal({ icon: '🏆', title: 'أكملت كل الكلمات بشكل صحيح!', lines: [`الزمن: <b>${OT.fmtTime(seconds)}</b>`, `التلميحات المستخدمة: <b>${hints}</b>`],
+    buttons: [{ label: 'القائمة', cls: 'ghost', onClick: menu }, { label: 'لغز جديد', cls: 'gold', onClick: () => start(cat) }] });
+}
+menu();
+</script>
+</body>
+</html>

@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ألعاب OTwo</title>
+<link rel="stylesheet" href="shared/otwo.css">
+<style>
+  .g { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+  .g a { display: block; text-decoration: none; color: var(--text); text-align: center; padding: 18px 8px; }
+  .g a div { font-size: 40px; } .g a b { display: block; margin-top: 6px; font-size: 14.5px; } .g a span { font-size: 11px; color: var(--muted); direction: ltr; display: block; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="center" style="padding:18px 0 14px"><div style="font-size:52px">🧪</div><h2 style="margin:6px 0 2px">ألعاب OTwo التعليمية</h2>
+    <p class="muted" style="margin:0">اختر لعبة للتجربة</p></div>
+  <div class="g" id="g"></div>
+  <p class="center muted" style="font-size:12px;margin-top:18px"><a href="tools/export.html" style="color:var(--primary)">أداة تصدير بيانات الألعاب من Firebase</a></p>
+</div>
+<script>
+const GAMES = [['elements_puzzle','🧩','لغز العناصر'],['periodic_challenge','⚡','تحدّي الجدول الدوري'],['chemistry_snake','🐍','ثعبان الكيمياء'],
+  ['gas_simulation','💨','محاكاة الغازات'],['loshatelie','⚖️','قاعدة لوشاتلييه'],['orbital_bonds','⚛️','الأفلاك والروابط'],['salt_lab','🧂','مختبر الأملاح'],
+  ['acid_base','⚗️','الأحماض والقواعد'],['elements_compare','🔬','مقارنة العناصر'],['crossword','🔤','كلمات متقاطعة']];
+document.getElementById('g').innerHTML = GAMES.map(([k, e, t]) => `<a class="card" href="${k}/"><div>${e}</div><b>${t}</b><span>${k}</span></a>`).join('');
+</script>
+</body>
+</html>

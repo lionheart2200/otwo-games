@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>تصدير بيانات الألعاب</title>
+<link rel="stylesheet" href="../shared/otwo.css">
+<style> .r { display: flex; align-items: center; gap: 10px; } .r b { flex: 1; } .r small { display: block; color: var(--muted); font-weight: 400; direction: ltr; text-align: right; } </style>
+</head>
+<body>
+<div class="app">
+  <h2 style="margin:14px 0 4px">📦 تصدير بيانات الألعاب من Firebase</h2>
+  <p class="muted" style="font-size:13.5px;line-height:1.8">هذه الصفحة تقرأ البيانات التي أدخلتها سابقاً من لوحة الأدمن في التطبيق، وتنزّل لكل لعبة ملف <b class="ltr">data.js</b> جاهزاً.
+    ارفع الملف المنزَّل إلى مجلّد اللعبة في المستودع بدل الملف الموجود. تُستخدم مرة واحدة فقط عند النقل.</p>
+  <div id="list"></div>
+  <div class="card muted" id="log" style="font-size:12.5px;white-space:pre-wrap;display:none"></div>
+</div>
+<script>
+'use strict';
+const PROJECT = 'otwo-37b6f';
+/* [مجموعة Firestore, مجلّد اللعبة, اسم المصفوفة, العنوان, دالة تنظيف] */
+const str = (v) => v == null ? '' : String(v);
+const SETS = [
+  ['crossword_words', 'crossword', 'words', 'كلمات متقاطعة', (d) => ({ word: str(d.word).trim(), clue: str(d.clue), category: str(d.category).trim() })],
+  ['loshteleh_reactions', 'loshatelie', 'reactions', 'قاعدة لوشاتلييه', (d) => d],
+  ['orbital_challenges', 'orbital_bonds', 'challenges', 'الأفلاك والروابط', (d) => d],
+  ['acid_compounds', 'acid_base', 'compounds', 'الأحماض والقواعد', (d) => ({ nameAr: str(d.nameAr || d.name_ar), nameEn: str(d.nameEn || d.name_en), type: str(d.type), strength: str(d.strength) })],
+  ['elementsform', 'elements_compare', 'elements', 'مقارنة العناصر', (d) => d],
+];
+const val = (v) => {
+  if ('stringValue' in v) return v.stringValue;
+  if ('integerValue' in v) return Number(v.integerValue);
+  if ('doubleValue' in v) return v.doubleValue;
+  if ('booleanValue' in v) return v.booleanValue;
+  if ('arrayValue' in v) return (v.arrayValue.values || []).map(val);
+  if ('mapValue' in v) return obj(v.mapValue.fields || {});
+  return undefined; // timestamps / null / references are dropped
+};
+const obj = (f) => { const o = {}; for (const k in f) { const x = val(f[k]); if (x !== undefined) o[k] = x; } return o; };
+async function fetchAll(col) {
+  let out = [], token = '';
+  do {
+    const r = await fetch(`https://firestore.googleapis.com/v1/projects/${PROJECT}/databases/(default)/documents/${col}?pageSize=300${token ? '&pageToken=' + token : ''}`);
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const j = await r.json();
+    out = out.concat((j.documents || []).map((d) => obj(d.fields || {})));
+    token = j.nextPageToken || '';
+  } while (token);
+  return out;
+}
+async function defaults(folder) {
+  try { const t = await (await fetch(`../${folder}/data.js`, { cache: 'no-store' })).text(); const w = {}; new Function('window', t)(w); return w.OTWO_DATA || {}; }
+  catch (_) { return {}; }
+}
+const log = (m) => { const l = document.getElementById('log'); l.style.display = 'block'; l.textContent += m + '\n'; };
+async function run(set, btn) {
+  const [col, folder, key, title, clean] = set;
+  btn.disabled = true; btn.textContent = '...';
+  try {
+    let rows = (await fetchAll(col)).map(clean);
+    if (!rows.length) { log(`ℹ️ ${title}: لا توجد بيانات في Firebase — أبقِ الملف الافتراضي كما هو.`); return; }
+    if (key === 'elements') { // كما في التطبيق: بيانات Firebase تتجاوز الافتراضي لنفس الرمز
+      const base = (await defaults(folder)).elements || [], m = {};
+      for (const e of base) m[e.symbol] = e;
+      for (const e of rows) m[e.symbol] = Object.assign({}, m[e.symbol], e);
+      rows = Object.values(m).sort((a, b) => (a.atomicNumber || 0) - (b.atomicNumber || 0));
+    }
+    const js = `/* ${title} — صُدّر من Firebase بتاريخ ${new Date().toISOString().slice(0, 10)} */\nwindow.OTWO_DATA = {\n  ${key}: [\n` +
+      rows.map((r) => '    ' + JSON.stringify(r)).join(',\n') + '\n  ],\n};\n';
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([js], { type: 'text/javascript' })); a.download = 'data.js'; a.click();
+    log(`✅ ${title}: ${rows.length} عنصراً — ارفع الملف المنزَّل إلى المجلّد ${folder}/`);
+  } catch (e) { log(`❌ ${title}: تعذّرت القراءة (${e.message}).`); }
+  finally { btn.disabled = false; btn.textContent = 'تنزيل data.js'; }
+}
+for (const s of SETS) {
+  const d = document.createElement('div'); d.className = 'card r';
+  d.innerHTML = `<b>${s[3]}<small>${s[0]} → ${s[1]}/data.js</small></b><button class="btn">تنزيل data.js</button>`;
+  d.querySelector('button').onclick = (e) => run(s, e.target);
+  document.getElementById('list').appendChild(d);
+}
+</script>
+</body>
+</html>

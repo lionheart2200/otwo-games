@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>مختبر الأملاح</title>
+<link rel="stylesheet" href="../shared/otwo.css">
+<style>
+  .flask { width: 120px; height: 130px; margin: 0 auto 6px; position: relative; }
+  .flask svg { width: 100%; height: 100%; }
+  .salt { text-align: center; }
+  .salt h2 { margin: 0; font-size: 21px; font-weight: 900; }
+  .salt .f { font-size: 26px; font-weight: 900; color: var(--primary); direction: ltr; margin: 2px 0 10px; }
+  .info { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .info div { padding: 8px; border-radius: 12px; background: rgba(255,255,255,.05); border: 1px solid var(--line); font-size: 13px; }
+  .info b { display: block; direction: ltr; font-size: 15px; }
+  .answers { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 12px; }
+  .answers .btn { padding: 14px 4px; font-size: 16px; }
+  .fb { min-height: 62px; text-align: center; font-weight: 800; font-size: 14.5px; line-height: 1.7; }
+  .lvl { display: flex; gap: 8px; margin-top: 14px; }
+</style>
+</head>
+<body>
+<div class="app" id="app"></div>
+<script src="../shared/otwo.js"></script>
+<script>
+'use strict';
+/* مختبر الأملاح — صنّف الملح (حمضي/قاعدي/متعادل) من الحمض والقاعدة المكوّنين له.
+   القاعدة: القوي يغلب. حمض قوي + قاعدة ضعيفة = حمضي، والعكس قاعدي، وقويان = متعادل. */
+const SALTS = [
+  ['كلوريد الصوديوم','NaCl','HCl','s','NaOH','s'],['كلوريد الأمونيوم','NH₄Cl','HCl','s','NH₄OH','w'],
+  ['أسيتات الصوديوم','CH₃COONa','CH₃COOH','w','NaOH','s'],['كبريتات البوتاسيوم','K₂SO₄','H₂SO₄','s','KOH','s'],
+  ['نترات الأمونيوم','NH₄NO₃','HNO₃','s','NH₄OH','w'],['كربونات الصوديوم','Na₂CO₃','H₂CO₃','w','NaOH','s'],
+  ['كلوريد البوتاسيوم','KCl','HCl','s','KOH','s'],['سيانيد الصوديوم','NaCN','HCN','w','NaOH','s'],
+  ['كبريتات الألمنيوم','Al₂(SO₄)₃','H₂SO₄','s','Al(OH)₃','w'],['نتريت الصوديوم','NaNO₂','HNO₂','w','NaOH','s'],
+  ['نترات البوتاسيوم','KNO₃','HNO₃','s','KOH','s'],['كلوريد الحديد (III)','FeCl₃','HCl','s','Fe(OH)₃','w'],
+  ['أسيتات البوتاسيوم','CH₃COOK','CH₃COOH','w','KOH','s'],['فلوريد البوتاسيوم','KF','HF','w','KOH','s'],
+  ['بروميد الأمونيوم','NH₄Br','HBr','s','NH₄OH','w'],['كبريتات الصوديوم','Na₂SO₄','H₂SO₄','s','NaOH','s'],
+].map(([name, formula, acid, a, base, b]) => ({ name, formula, acid, a, base, b,
+  type: a === 's' && b === 'w' ? 'حمضي' : a === 'w' && b === 's' ? 'قاعدي' : 'متعادل' }));
+const COLOR = { 'حمضي': '#ef476f', 'قاعدي': '#4d9fff', 'متعادل': '#06d6a0' };
+const ROUNDS = 8;
+const app = OT.$('#app');
+let list, i, score, right, wrong, hard = false, locked;
+
+function flask(color) {
+  return `<svg viewBox="0 0 120 130"><defs><clipPath id="c"><path d="M46 8h28v38l30 62a10 10 0 0 1-9 14H25a10 10 0 0 1-9-14l30-62z"/></clipPath></defs>
+    <g clip-path="url(#c)"><rect width="120" height="130" fill="rgba(255,255,255,.07)"/>
+      <rect y="62" width="120" height="70" fill="${color}" opacity=".85"><animate attributeName="y" values="64;60;64" dur="2.4s" repeatCount="indefinite"/></rect>
+      <circle cx="48" cy="96" r="4" fill="#fff" opacity=".5"><animate attributeName="cy" values="110;70" dur="2s" repeatCount="indefinite"/></circle>
+      <circle cx="72" cy="104" r="3" fill="#fff" opacity=".4"><animate attributeName="cy" values="114;74" dur="2.6s" repeatCount="indefinite"/></circle></g>
+    <path d="M46 8h28v38l30 62a10 10 0 0 1-9 14H25a10 10 0 0 1-9-14l30-62z" fill="none" stroke="#cfe6ff" stroke-width="3"/>
+    <rect x="42" y="4" width="36" height="7" rx="3" fill="#cfe6ff"/></svg>`;
+}
+const strength = (k, isAcid) => k === 's' ? (isAcid ? 'قوي' : 'قوية') : (isAcid ? 'ضعيف' : 'ضعيفة');
+
+function start() {
+  list = OT.shuffle(SALTS).slice(0, ROUNDS); i = 0; score = 0; right = 0; wrong = 0;
+  app.innerHTML = '';
+  app.appendChild(OT.topbar('مختبر الأملاح', [
+    'كل ملح ينتج من حمض وقاعدة. صنّفه: حمضي، قاعدي، أو متعادل.',
+    '<b>القاعدة:</b> القوي يغلب الضعيف.',
+    'حمض قوي + قاعدة ضعيفة ← ملح حمضي. حمض ضعيف + قاعدة قوية ← ملح قاعدي. قوي + قوي ← متعادل.',
+    'في المستوى الصعب لا تظهر قوة الحمض والقاعدة، وعليك تذكّرها.',
+  ]));
+  app.insertAdjacentHTML('beforeend', `
+    <div class="stats"><div class="stat"><b id="sQ"></b><span>السؤال</span></div><div class="stat"><b id="sS">0</b><span>النقاط</span></div>
+      <div class="stat"><b id="sR" style="color:var(--success)">0</b><span>صحيح</span></div><div class="stat"><b id="sW" style="color:var(--error)">0</b><span>خطأ</span></div></div>
+    <div class="bar" style="margin-bottom:12px"><i id="prog"></i></div>
+    <div class="card salt"><div class="flask" id="fl"></div><h2 id="nm"></h2><div class="f" id="fm"></div><div class="info" id="info"></div></div>
+    <div class="center muted" style="margin-bottom:8px;font-weight:700">صنّف هذا الملح:</div>
+    <div class="answers"><button class="btn red" data-t="حمضي">حمضي</button><button class="btn green" data-t="متعادل">متعادل</button>
+      <button class="btn" data-t="قاعدي">قاعدي</button></div>
+    <div class="fb" id="fb"></div>
+    <div class="lvl"><button class="btn ghost" id="bLvl"></button></div>`);
+  for (const b of OT.$$('[data-t]')) b.onclick = () => check(b.dataset.t, b);
+  OT.$('#bLvl').onclick = () => { hard = !hard; start(); };
+  show();
+}
+function show() {
+  locked = false;
+  const s = list[i];
+  OT.$('#sQ').textContent = `${i + 1} / ${ROUNDS}`; OT.$('#sS').textContent = score;
+  OT.$('#sR').textContent = right; OT.$('#sW').textContent = wrong;
+  OT.$('#prog').style.width = (i / ROUNDS * 100) + '%';
+  OT.$('#fl').innerHTML = flask('#8fa3c0');
+  OT.$('#nm').textContent = s.name; OT.$('#fm').textContent = s.formula;
+  OT.$('#info').innerHTML = `<div>الحمض<b>${s.acid}</b>${hard ? '' : `<span class="muted">${strength(s.a, true)}</span>`}</div>
+    <div>القاعدة<b>${s.base}</b>${hard ? '' : `<span class="muted">${strength(s.b, false)}</span>`}</div>`;
+  OT.$('#fb').innerHTML = '';
+  OT.$('#bLvl').textContent = hard ? '🎓 المستوى: صعب (اضغط للتبديل إلى سهل)' : '🌱 المستوى: سهل (اضغط للتبديل إلى صعب)';
+  for (const b of OT.$$('[data-t]')) b.disabled = false;
+}
+function check(t, btn) {
+  if (locked) return; locked = true;
+  const s = list[i], ok = s.type === t;
+  for (const b of OT.$$('[data-t]')) b.disabled = true;
+  OT.$('#fl').innerHTML = flask(COLOR[s.type]);
+  const why = `حمض ${strength(s.a, true)} + قاعدة ${strength(s.b, false)} ← ملح <b style="color:${COLOR[s.type]}">${s.type}</b>`;
+  if (ok) { score += hard ? 30 : 20; right++; OT.sfx.ok(); OT.$('#fb').innerHTML = `<span style="color:var(--success)">✅ إجابة صحيحة!</span><br>${why}`; }
+  else { wrong++; OT.sfx.bad(); btn.classList.add('shake'); OT.$('#fb').innerHTML = `<span style="color:var(--error)">❌ ليست صحيحة.</span><br>${why}`; }
+  OT.$('#sS').textContent = score; OT.$('#sR').textContent = right; OT.$('#sW').textContent = wrong;
+  const l0 = list, i0 = i; setTimeout(() => { if (list !== l0 || i !== i0 || !OT.$('#fb')) return; if (i < ROUNDS - 1) { i++; show(); } else finish(); }, ok ? 1500 : 2600);
+}
+function finish() {
+  OT.$('#prog').style.width = '100%';
+  const pct = Math.round(right / ROUNDS * 100);
+  if (pct >= 75) { OT.confetti(); OT.sfx.win(); }
+  OT.modal({ icon: pct === 100 ? '🏆' : pct >= 75 ? '🌟' : pct >= 50 ? '🧪' : '📚',
+    title: pct === 100 ? 'علامة كاملة!' : pct >= 75 ? 'ممتاز!' : pct >= 50 ? 'جيد، واصل التدريب' : 'راجع القاعدة وحاول مجدداً',
+    lines: [`النقاط: <b style="color:var(--accent)">${score}</b>`, `صحيح: <b>${right}</b> — خطأ: <b>${wrong}</b> (${pct}%)`],
+    buttons: [{ label: 'العب مجدداً', cls: 'gold', onClick: start }] });
+}
+start();
+</script>
+</body>
+</html>

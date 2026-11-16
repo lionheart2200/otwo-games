@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>الكيمياء والثعبان</title>
+<link rel="stylesheet" href="../shared/otwo.css">
+<style>
+  body { overflow: hidden; }
+  .app { height: 100dvh; min-height: 0; }
+  .wrap { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; position: relative; }
+  canvas { border-radius: 16px; border: 1px solid rgba(0,229,255,.35); background: #07101f;
+    box-shadow: 0 5px 0 var(--edge), 0 0 26px rgba(0,229,255,.15); touch-action: none; max-width: 100%; max-height: 100%; }
+  .overlay { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(5,10,20,.78); border-radius: 16px;
+    text-align: center; padding: 16px; }
+  .overlay h2 { margin: 6px 0; font-size: 22px; font-weight: 900; }
+  .bottom { display: flex; align-items: center; gap: 12px; padding-top: 10px; }
+  .dpad { display: grid; grid-template-columns: repeat(3, 50px); grid-template-rows: repeat(3, 50px); gap: 4px; direction: ltr; flex: none; }
+  .dpad button { border: 0; border-radius: 14px; font-size: 22px; color: #fff; cursor: pointer;
+    background: linear-gradient(180deg, #2a3a5a, #17233b); box-shadow: 0 4px 0 var(--edge); }
+  .dpad button:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--edge); }
+  .info { flex: 1; min-width: 0; }
+  .info .card { margin: 0; padding: 10px 12px; }
+  .info .sym { font-size: 30px; font-weight: 900; direction: ltr; line-height: 1; }
+  .chips { display: flex; gap: 6px; overflow-x: auto; padding: 8px 0 0; scrollbar-width: none; direction: ltr; }
+  .chips span { flex: none; padding: 2px 9px; border-radius: 10px; font-size: 12px; font-weight: 800; border: 1px solid; }
+</style>
+</head>
+<body>
+<div class="app" id="app"></div>
+<script src="../shared/otwo.js"></script>
+<script>
+'use strict';
+/* الكيمياء والثعبان — ثعبان يجمع العناصر. كل عنصر = عدده الذري × 10 نقاط،
+   وبطاقة تعريف العنصر تظهر عند التقاطه. الاصطدام بالجدار أو بالجسم ينهي اللعبة. */
+const CAT = { nonmetal: 'لا فلز', noble: 'غاز نبيل', alkali: 'فلز قلوي', alkaline: 'فلز قلوي أرضي', metal: 'فلز', metalloid: 'شبه فلز' };
+const ELS = [['H','هيدروجين','Hydrogen',1,'#00E5FF','nonmetal'],['He','هيليوم','Helium',2,'#E040FB','noble'],
+  ['Li','ليثيوم','Lithium',3,'#FF6D00','alkali'],['C','كربون','Carbon',6,'#69F0AE','nonmetal'],
+  ['N','نيتروجين','Nitrogen',7,'#00E5FF','nonmetal'],['O','أكسجين','Oxygen',8,'#FF5252','nonmetal'],
+  ['Na','صوديوم','Sodium',11,'#FF6D00','alkali'],['Mg','مغنيسيوم','Magnesium',12,'#40C4FF','alkaline'],
+  ['Al','ألومنيوم','Aluminum',13,'#B0BEC5','metal'],['Si','سيليكون','Silicon',14,'#78909C','metalloid'],
+  ['P','فوسفور','Phosphorus',15,'#FFD740','nonmetal'],['S','كبريت','Sulfur',16,'#F4C400','nonmetal'],
+  ['Cl','كلور','Chlorine',17,'#76FF03','nonmetal'],['K','بوتاسيوم','Potassium',19,'#FF6D00','alkali'],
+  ['Ca','كالسيوم','Calcium',20,'#40C4FF','alkaline'],['Fe','حديد','Iron',26,'#FF7043','metal'],
+  ['Cu','نحاس','Copper',29,'#FFAB40','metal'],['Zn','زنك','Zinc',30,'#80CBC4','metal'],
+  ['Ag','فضة','Silver',47,'#ECEFF1','metal'],['Au','ذهب','Gold',79,'#FFD700','metal']]
+  .map(([sym, ar, en, z, color, cat]) => ({ sym, ar, en, z, color, cat }));
+
+const COLS = 20, ROWS = 24, TICK = 260;
+const BEST_KEY = 'ot_snake_best';
+const best = () => { try { return +localStorage.getItem(BEST_KEY) || 0; } catch (_) { return 0; } };
+
+const app = OT.$('#app');
+app.appendChild(OT.topbar('🐍 الكيمياء والثعبان', [
+  'حرّك الثعبان بالسحب على اللوحة أو بأزرار الأسهم (أو أسهم لوحة المفاتيح).',
+  'التقط العناصر: كل عنصر يمنحك عدده الذري × 10 نقاط، وتظهر بطاقة تعريفه.',
+  'تجنّب الجدران وجسم الثعبان.',
+]));
+app.insertAdjacentHTML('beforeend', `
+  <div class="stats">
+    <div class="stat"><b id="sScore">0</b><span>النقاط</span></div>
+    <div class="stat"><b id="sLen">3</b><span>طول الثعبان</span></div>
+    <div class="stat"><b id="sBest">${best()}</b><span>أفضل نتيجة</span></div>
+    <div class="stat" id="pauseBox" style="cursor:pointer"><b id="sPause">⏸</b><span>إيقاف مؤقت</span></div>
+  </div>
+  <div class="wrap" id="wrap"><canvas id="cv"></canvas><div class="overlay" id="ov"></div></div>
+  <div class="chips" id="chips"></div>
+  <div class="bottom">
+    <div class="dpad">
+      <span></span><button data-d="up">▲</button><span></span>
+      <button data-d="left">◀</button><span></span><button data-d="right">▶</button>
+      <span></span><button data-d="down">▼</button><span></span>
+    </div>
+    <div class="info" id="info"><div class="card flat muted center" style="font-size:13px">التقط عنصراً لتظهر بطاقته هنا</div></div>
+  </div>`);
+
+const cv = OT.$('#cv'), g = cv.getContext('2d'), ov = OT.$('#ov');
+let cell = 16, snake, dir, nextDir, pickups, collected, score, running = false, paused = false, over = false, timer, t0 = 0;
+
+function fit() {
+  const w = OT.$('#wrap'), dpr = window.devicePixelRatio || 1;
+  cell = Math.max(8, Math.floor(Math.min(w.clientWidth / COLS, w.clientHeight / ROWS)));
+  cv.style.width = cell * COLS + 'px'; cv.style.height = cell * ROWS + 'px';
+  cv.width = cell * COLS * dpr; cv.height = cell * ROWS * dpr;
+  g.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+window.addEventListener('resize', fit);
+
+const same = (a, b) => a.x === b.x && a.y === b.y;
+const onSnake = (p) => snake.some((s) => same(s, p));
+function spawn() {
+  for (let i = 0; i < 50; i++) {
+    const p = { x: OT.rand(COLS), y: OT.rand(ROWS) };
+    if (!onSnake(p) && !pickups.some((k) => same(k, p))) { pickups.push({ ...p, el: OT.pick(ELS) }); return; }
+  }
+}
+function start() {
+  snake = [{ x: 10, y: 12 }, { x: 9, y: 12 }, { x: 8, y: 12 }];
+  dir = nextDir = 'right'; pickups = []; collected = []; score = 0;
+  over = false; running = true; paused = false;
+  spawn(); spawn();
+  ov.style.display = 'none'; OT.$('#chips').innerHTML = '';
+  clearInterval(timer); timer = setInterval(tick, TICK);
+  hud();
+}
+function turn(d) {
+  const opp = { up: 'down', down: 'up', left: 'right', right: 'left' };
+  if (opp[d] === dir) return;
+  nextDir = d;
+}
+function tick() {
+  if (!running || paused) return;
+  dir = nextDir;
+  const h = snake[0], n = { x: h.x + (dir === 'right') - (dir === 'left'), y: h.y + (dir === 'down') - (dir === 'up') };
+  if (n.x < 0 || n.x >= COLS || n.y < 0 || n.y >= ROWS || onSnake(n)) return end();
+  snake.unshift(n);
+  const i = pickups.findIndex((p) => same(p, n));
+  if (i >= 0) {
+    const el = pickups.splice(i, 1)[0].el;
+    collected.push(el); score += el.z * 10; OT.sfx.ok();
+    if (pickups.length < 3) spawn();
+    if (pickups.length < 2) spawn();
+    showInfo(el);
+  } else snake.pop();
+  hud();
+}
+function end() {
+  running = false; over = true; clearInterval(timer); OT.sfx.bad();
+  const isBest = score > best();
+  if (isBest) { try { localStorage.setItem(BEST_KEY, score); } catch (_) {} OT.confetti(); }
+  overlay(`<div><div style="font-size:54px">${isBest ? '🏅' : '💥'}</div><h2>${isBest ? 'رقم قياسي جديد!' : 'انتهت اللعبة'}</h2>
+    <p class="muted" style="margin:4px 0 14px">النقاط: <b style="color:var(--accent)">${score}</b> — جمعت ${collected.length} عنصراً</p>
+    <button class="btn gold" id="go">العب مجدداً</button></div>`);
+  hud();
+}
+function overlay(html) { ov.innerHTML = html; ov.style.display = 'grid'; const b = OT.$('#go'); if (b) b.onclick = start; }
+function togglePause() {
+  if (!running || over) return;
+  paused = !paused;
+  OT.$('#sPause').textContent = paused ? '▶' : '⏸';
+  if (paused) { overlay(`<div><div style="font-size:50px">⏸</div><h2>إيقاف مؤقت</h2><button class="btn" id="res">متابعة</button></div>`);
+    OT.$('#res').onclick = togglePause; } else ov.style.display = 'none';
+}
+function hud() {
+  OT.$('#sScore').textContent = score; OT.$('#sLen').textContent = snake.length;
+  OT.$('#sBest').textContent = Math.max(best(), score);
+}
+function showInfo(el) {
+  OT.$('#info').innerHTML = `<div class="card flat pop" style="border-color:${el.color}88">
+    <div style="display:flex;align-items:center;gap:10px">
+      <div class="sym" style="color:${el.color}">${el.sym}</div>
+      <div style="min-width:0"><b>${el.ar}</b> <span class="muted ltr" style="font-size:12px">${el.en}</span>
+        <div class="muted" style="font-size:12px">العدد الذري ${el.z} • ${CAT[el.cat]} • <b style="color:var(--accent)">+${el.z * 10}</b></div></div>
+    </div></div>`;
+  const c = OT.el('span', {}, `${el.sym}<sub>${el.z}</sub>`);
+  c.style.color = el.color; c.style.borderColor = el.color + '88';
+  OT.$('#chips').prepend(c);
+}
+
+function rr(x, y, w, h, r) { g.beginPath(); g.roundRect(x, y, w, h, r); }
+function draw(ts) {
+  t0 = ts / 1000;
+  const W = cell * COLS, H = cell * ROWS;
+  g.clearRect(0, 0, W, H);
+  g.strokeStyle = 'rgba(255,255,255,.035)'; g.lineWidth = 1;
+  for (let x = 1; x < COLS; x++) { g.beginPath(); g.moveTo(x * cell, 0); g.lineTo(x * cell, H); g.stroke(); }
+  for (let y = 1; y < ROWS; y++) { g.beginPath(); g.moveTo(0, y * cell); g.lineTo(W, y * cell); g.stroke(); }
+  if (snake) {
+    for (const p of pickups) {
+      const cx = p.x * cell + cell / 2, cy = p.y * cell + cell / 2, pulse = 1 + Math.sin(t0 * 5 + p.x) * 0.08;
+      g.shadowColor = p.el.color; g.shadowBlur = 12;
+      g.fillStyle = p.el.color + '33'; rr(cx - cell * .46 * pulse, cy - cell * .46 * pulse, cell * .92 * pulse, cell * .92 * pulse, cell * .25); g.fill();
+      g.strokeStyle = p.el.color; g.lineWidth = 1.5; g.stroke(); g.shadowBlur = 0;
+      g.fillStyle = p.el.color; g.font = `900 ${Math.max(7, cell * .5)}px Cairo, sans-serif`;
+      g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(p.el.sym, cx, cy + 1);
+    }
+    snake.forEach((s, i) => {
+      const k = 1 - i / (snake.length + 4);
+      g.fillStyle = i === 0 ? '#69F0AE' : `rgba(0,${Math.round(150 + 80 * k)},${Math.round(180 + 60 * k)},${.55 + .45 * k})`;
+      if (i === 0) { g.shadowColor = '#69F0AE'; g.shadowBlur = 14; }
+      rr(s.x * cell + 1, s.y * cell + 1, cell - 2, cell - 2, cell * .3); g.fill(); g.shadowBlur = 0;
+    });
+    const h = snake[0];   // عينا الثعبان
+    g.fillStyle = '#07101f';
+    const ex = dir === 'left' ? .28 : dir === 'right' ? .72 : .3, ey = dir === 'up' ? .28 : dir === 'down' ? .72 : .3;
+    const horiz = dir === 'left' || dir === 'right';
+    g.beginPath(); g.arc(h.x * cell + cell * ex, h.y * cell + cell * ey, cell * .09, 0, 7);
+    g.arc(h.x * cell + cell * (horiz ? ex : .7), h.y * cell + cell * (horiz ? .7 : ey), cell * .09, 0, 7); g.fill();
+  }
+  requestAnimationFrame(draw);
+}
+
+// ── التحكّم: سحب، أزرار، لوحة مفاتيح ──
+let sx = 0, sy = 0;
+cv.addEventListener('pointerdown', (e) => { sx = e.clientX; sy = e.clientY; });
+cv.addEventListener('pointermove', (e) => {
+  if (!e.buttons && e.pointerType === 'mouse') return;
+  const dx = e.clientX - sx, dy = e.clientY - sy;
+  if (Math.abs(dx) < 14 && Math.abs(dy) < 14) return;
+  turn(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up'));
+  sx = e.clientX; sy = e.clientY;
+});
+for (const b of OT.$$('.dpad button')) b.addEventListener('pointerdown', (e) => { e.preventDefault(); turn(b.dataset.d); OT.sfx.tap(); });
+window.addEventListener('keydown', (e) => {
+  const m = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right' }[e.key];
+  if (m) { e.preventDefault(); turn(m); } else if (e.key === ' ') togglePause();
+});
+OT.$('#pauseBox').onclick = togglePause;
+document.addEventListener('visibilitychange', () => { if (document.hidden && running && !paused) togglePause(); });
+
+fit();
+overlay(`<div><div style="font-size:58px">🐍</div><h2>الكيمياء والثعبان</h2>
+  <p class="muted" style="margin:4px 0 14px">اجمع العناصر وتعرّف عليها!</p><button class="btn gold" id="go">ابدأ اللعب</button></div>`);
+requestAnimationFrame(draw);
+</script>
+</body>
+</html>

@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>تحدّي الجدول الدوري</title>
+<link rel="stylesheet" href="../shared/otwo.css">
+<style>
+  .hero { text-align: center; padding: 18px 8px 6px; }
+  .hero .ico { font-size: 62px; }
+  .hero h2 { margin: 6px 0 2px; font-size: 22px; font-weight: 900; }
+  .mode { display: flex; align-items: center; gap: 12px; width: 100%; text-align: start; cursor: pointer; color: var(--text);
+    font-family: inherit; }
+  .mode .i { width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center; font-size: 22px;
+    background: linear-gradient(180deg, #19c5e6, var(--primary-deep)); box-shadow: 0 4px 0 #034a73; flex: none; }
+  .mode b { display: block; font-size: 15.5px; }
+  .mode span { font-size: 12px; color: var(--muted); }
+  .qcard { text-align: center; border-radius: 22px; padding: 18px 12px; margin-bottom: 14px;
+    background: linear-gradient(160deg, #ffb703, #0077b6 75%); box-shadow: 0 6px 0 #04395a, 0 16px 28px rgba(0,119,182,.3); }
+  .qcard .n { font-size: 15px; font-weight: 800; opacity: .9; }
+  .qcard .big { font-size: clamp(40px, 15vw, 68px); font-weight: 900; line-height: 1.2; }
+  .qcard .ask { display: inline-block; margin-top: 6px; padding: 4px 14px; border-radius: 999px; background: rgba(0,0,0,.25);
+    font-size: 13px; font-weight: 700; }
+  .opts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+  .opt { border: 0; border-radius: 16px; padding: 16px 8px; font-size: 18px; font-weight: 800; color: #fff; cursor: pointer;
+    font-family: inherit; background: linear-gradient(180deg, #19c5e6, var(--primary-deep)); box-shadow: 0 4px 0 #034a73; }
+  .opt.sym { direction: ltr; font-size: 24px; }
+  .opt.right { background: linear-gradient(180deg, #2ee6b5, #05a37a); box-shadow: 0 4px 0 #04614a; }
+  .opt.wrong { background: linear-gradient(180deg, #ff6f8f, #d92d57); box-shadow: 0 4px 0 #8a1836; }
+  .opt.dim { background: #46526a; box-shadow: 0 4px 0 #2a3345; opacity: .7; }
+  .tbar { height: 6px; border-radius: 6px; background: rgba(255,255,255,.12); overflow: hidden; margin-bottom: 12px; }
+  .tbar i { display: block; height: 100%; background: var(--accent); transition: width 1s linear; }
+</style>
+</head>
+<body>
+<div class="app" id="app"></div>
+<script src="../shared/otwo.js"></script>
+<script>
+'use strict';
+/* تحدّي الجدول الدوري — اختيار من متعدد.
+   النقاط = 10 × المستوى (ومضاعفة عند سلسلة أكثر من 3). كل 30 ثانية يرتفع المستوى. */
+const E = [['H','الهيدروجين',1],['He','الهيليوم',2],['Li','الليثيوم',3],['Be','البريليوم',4],['B','البورون',5],
+  ['C','الكربون',6],['N','النيتروجين',7],['O','الأكسجين',8],['F','الفلور',9],['Ne','النيون',10],['Na','الصوديوم',11],
+  ['Mg','المغنيسيوم',12],['Al','الألومنيوم',13],['Si','السيليكون',14],['P','الفوسفور',15],['S','الكبريت',16],
+  ['Cl','الكلور',17],['Ar','الأرجون',18],['K','البوتاسيوم',19],['Ca','الكالسيوم',20],['Fe','الحديد',26],
+  ['Cu','النحاس',29],['Zn','الزنك',30],['Br','البروم',35],['Ag','الفضة',47],['I','اليود',53],['Au','الذهب',79],
+  ['Hg','الزئبق',80]].map(([symbol, name, number]) => ({ symbol, name, number }));
+
+const MODES = {
+  symbol_to_name: { title: 'من الرمز إلى الاسم', sub: 'اعرف اسم العنصر من رمزه', ico: '🔤',
+    show: (e) => e.symbol, ans: (e) => e.name, ask: 'ما اسم هذا العنصر؟', symOpts: false, showNum: true },
+  name_to_symbol: { title: 'من الاسم إلى الرمز', sub: 'اعرف رمز العنصر من اسمه', ico: '🔡',
+    show: (e) => e.name, ans: (e) => e.symbol, ask: 'ما رمز هذا العنصر؟', symOpts: true, showNum: true },
+  number_to_name: { title: 'من العدد الذري إلى الاسم', sub: 'اعرف العنصر من عدده الذري', ico: '🔢',
+    show: (e) => e.number, ans: (e) => e.name, ask: 'أي عنصر له هذا العدد الذري؟', symOpts: false, showNum: false },
+};
+const BEST_KEY = 'ot_periodic_best';
+const best = () => { try { return +localStorage.getItem(BEST_KEY) || 0; } catch (_) { return 0; } };
+
+const app = OT.$('#app');
+let mode, score, level, streak, timeLeft, timer, cur, answered, last;
+
+function startScreen() {
+  clearInterval(timer);
+  app.innerHTML = '';
+  app.appendChild(OT.topbar('تحدّي الجدول الدوري', [
+    'اختر الإجابة الصحيحة من أربعة خيارات.',
+    'كل إجابة صحيحة = 10 نقاط × المستوى، وتتضاعف عند سلسلة أكثر من 3 إجابات متتالية.',
+    'يرتفع المستوى تلقائياً كل 30 ثانية.',
+  ]));
+  app.insertAdjacentHTML('beforeend', `
+    <div class="hero"><div class="ico">⚗️</div><h2>تحدّي الجدول الدوري</h2>
+      <p class="muted" style="margin:0 0 6px">اختبر معرفتك بالعناصر الكيميائية!</p>
+      ${best() ? `<span class="chip gold">🏅 أفضل نتيجة لك: ${best()}</span>` : ''}</div>
+    <div id="modes" style="margin-top:14px"></div>`);
+  for (const [k, m] of Object.entries(MODES)) {
+    const b = OT.el('button', { class: 'card mode' },
+      `<div class="i">${m.ico}</div><div style="flex:1"><b>${m.title}</b><span>${m.sub}</span></div><div>▶</div>`);
+    b.onclick = () => start(k);
+    OT.$('#modes').appendChild(b);
+  }
+}
+
+function start(k) {
+  mode = MODES[k]; score = 0; level = 1; streak = 0; last = null;
+  app.innerHTML = '';
+  app.appendChild(OT.topbar(mode.title));
+  app.insertAdjacentHTML('beforeend', `
+    <div class="stats">
+      <div class="stat"><b id="sScore">0</b><span>النقاط</span></div>
+      <div class="stat"><b id="sLevel">1</b><span>المستوى</span></div>
+      <div class="stat"><b id="sStreak">0</b><span>السلسلة 🔥</span></div>
+      <div class="stat"><b id="sTime">30</b><span>ث للمستوى التالي</span></div>
+    </div>
+    <div class="tbar"><i id="tb" style="width:100%"></i></div>
+    <div class="qcard"><div class="n" id="qn"></div><div class="big" id="qb"></div><span class="ask" id="qa"></span></div>
+    <div class="opts" id="opts"></div>
+    <button class="btn ghost" id="end">إنهاء اللعبة</button>`);
+  OT.$('#end').onclick = confirmEnd;
+  timeLeft = 30;
+  timer = setInterval(() => {
+    if (timeLeft > 0) timeLeft--; else { level++; timeLeft = 30; OT.toast(`⬆️ المستوى ${level}`, 'ok', 1400); }
+    hud();
+  }, 1000);
+  next();
+}
+function hud() {
+  if (!OT.$('#sScore')) return;   // الشاشة تغيّرت (قائمة/نتيجة)
+  OT.$('#sScore').textContent = score; OT.$('#sLevel').textContent = level;
+  OT.$('#sStreak').textContent = streak; OT.$('#sTime').textContent = timeLeft;
+  OT.$('#tb').style.width = (timeLeft / 30 * 100) + '%';
+}
+function next() {
+  if (!OT.$('#opts')) return;
+  answered = false;
+  do { cur = OT.pick(E); } while (cur === last);   // لا يتكرّر السؤال نفسه مرتين متتاليتين
+  last = cur;
+  const correct = mode.ans(cur), set = new Set([correct]);
+  while (set.size < 4) set.add(mode.ans(OT.pick(E)));
+  OT.$('#qn').textContent = mode.showNum ? `العدد الذري ${cur.number}` : '';
+  const qb = OT.$('#qb'); qb.textContent = mode.show(cur); qb.classList.remove('pop'); void qb.offsetWidth; qb.classList.add('pop');
+  OT.$('#qa').textContent = mode.ask;
+  const box = OT.$('#opts'); box.innerHTML = '';
+  for (const o of OT.shuffle([...set])) {
+    const b = OT.el('button', { class: 'opt' + (mode.symOpts ? ' sym' : '') }, OT.esc(o));
+    b.onclick = () => check(o, b);
+    box.appendChild(b);
+  }
+  hud();
+}
+function check(ans, btn) {
+  if (answered) return;
+  answered = true;
+  const correct = mode.ans(cur);
+  for (const b of OT.$$('.opt')) {
+    if (b.textContent === String(correct)) b.classList.add('right');
+    else if (b === btn) b.classList.add('wrong');
+    else b.classList.add('dim');
+  }
+  if (ans === correct) {
+    streak++; score += 10 * level * (streak > 3 ? 2 : 1); OT.sfx.ok();
+    if (streak === 5) OT.toast('🔥 رائع! سلسلة من 5 إجابات صحيحة!', 'ok');
+  } else { streak = 0; OT.sfx.bad(); btn.classList.add('shake'); }
+  hud();
+  const q0 = cur; setTimeout(() => { if (timer && cur === q0 && answered) next(); }, 1300);
+}
+function msg() {
+  if (score >= 500) return '🏆 أسطورة الكيمياء!';
+  if (score >= 300) return '🌟 عالِم كيميائي محترف!';
+  if (score >= 150) return '⚗️ كيميائي ممتاز!';
+  if (score >= 50) return '🧪 طالب مجتهد!';
+  return '📚 استمر في التعلّم!';
+}
+function confirmEnd() {
+  OT.modal({ icon: '🏁', title: 'إنهاء اللعبة؟', lines: [`النقاط: <b>${score}</b> — المستوى: <b>${level}</b>`, msg()],
+    buttons: [{ label: 'متابعة اللعب', cls: 'ghost' }, { label: 'إنهاء', cls: 'gold', onClick: end }] });
+}
+function end() {
+  clearInterval(timer); timer = null;
+  const isBest = score > best();
+  if (isBest) { try { localStorage.setItem(BEST_KEY, score); } catch (_) {} OT.confetti(); OT.sfx.win(); }
+  OT.modal({ icon: isBest ? '🏅' : '🎯', title: isBest ? 'رقم قياسي جديد!' : 'انتهت اللعبة',
+    lines: [`النقاط: <b style="color:var(--accent)">${score}</b>`, `المستوى: <b>${level}</b>`, msg()],
+    buttons: [{ label: 'العب مجدداً', cls: 'gold', onClick: startScreen }] });
+  startScreen();
+}
+startScreen();
+</script>
+</body>
+</html>

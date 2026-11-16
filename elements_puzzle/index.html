@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>ترتيب العناصر</title>
+<link rel="stylesheet" href="../shared/otwo.css">
+<style>
+  .board { display: grid; grid-template-columns: repeat(5, 1fr); gap: 7px; width: 100%; max-width: 520px; margin: 0 auto 14px;
+    aspect-ratio: 1; }
+  .tile { border: 0; border-radius: 12px; color: #fff; cursor: pointer; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; padding: 2px; line-height: 1.15; font-family: inherit;
+    box-shadow: 0 4px 0 rgba(0,0,0,.35); transition: transform .12s; min-width: 0; }
+  .tile:active { transform: scale(.94); }
+  .tile .sym { font-size: clamp(15px, 5.2vw, 26px); font-weight: 900; direction: ltr; }
+  .tile .num { font-size: clamp(9px, 2.6vw, 13px); opacity: .85; }
+  .tile .nm { font-size: clamp(7.5px, 2.3vw, 11px); opacity: .85; white-space: nowrap; }
+  .tile.ok { outline: 2px solid rgba(255,255,255,.75); outline-offset: -2px; }
+  .tile.movable { box-shadow: 0 4px 0 rgba(0,0,0,.35), 0 0 0 2px rgba(255,183,3,.9); }
+  .empty { border-radius: 12px; background: rgba(255,255,255,.06); border: 1px dashed rgba(255,255,255,.15); }
+</style>
+</head>
+<body>
+<div class="app" id="app"></div>
+<script src="../shared/otwo.js"></script>
+<script>
+'use strict';
+/* لعبة إعادة ترتيب العناصر — أحجية انزلاق 5×5:
+   رتّب أول 24 عنصراً تصاعدياً بالعدد الذري بتحريك البلاطة المجاورة للخانة الفارغة. */
+const N = 5, TOTAL = N * N;
+const ELEMENTS = [
+  [1,'H','هيدروجين','#E74C3C'],[2,'He','هيليوم','#E67E22'],[3,'Li','ليثيوم','#F39C12'],[4,'Be','بريليوم','#D4AC0D'],
+  [5,'B','بورون','#2ECC71'],[6,'C','كربون','#1ABC9C'],[7,'N','نيتروجين','#3498DB'],[8,'O','أكسجين','#9B59B6'],
+  [9,'F','فلور','#E91E63'],[10,'Ne','نيون','#673AB7'],[11,'Na','صوديوم','#00ACC1'],[12,'Mg','مغنيسيوم','#009688'],
+  [13,'Al','ألومنيوم','#43A047'],[14,'Si','سيليكون','#7CB342'],[15,'P','فسفور','#FB8C00'],[16,'S','كبريت','#E69500'],
+  [17,'Cl','كلور','#9E9D24'],[18,'Ar','أرجون','#8D8D8D'],[19,'K','بوتاسيوم','#9C27B0'],[20,'Ca','كالسيوم','#3F51B5'],
+  [21,'Sc','سكانديوم','#1E88E5'],[22,'Ti','تيتانيوم','#039BE5'],[23,'V','فاناديوم','#0097A7'],[24,'Cr','كروم','#00796B'],
+].map(([z, sym, name, color]) => ({ z, sym, name, color }));
+
+let grid, moves, seconds, won, timer;
+const app = OT.$('#app');
+app.appendChild(OT.topbar('ترتيب العناصر', [
+  'رتّب العناصر تصاعدياً بالعدد الذري من 1 إلى 24.',
+  'اضغط على بلاطة مجاورة للخانة الفارغة لتنزلق إليها (البلاطات المتاحة محاطة بإطار ذهبي).',
+  'كلما قلّت الحركات والوقت زادت نقاطك.',
+]));
+app.insertAdjacentHTML('beforeend', `
+  <div class="stats">
+    <div class="stat"><b id="sTime">0 ث</b><span>الوقت</span></div>
+    <div class="stat"><b id="sMoves">0</b><span>الحركات</span></div>
+    <div class="stat"><b id="sScore">2000</b><span>النقاط</span></div>
+  </div>
+  <div class="bar" style="margin-bottom:12px"><i id="prog"></i></div>
+  <div class="board" id="board"></div>
+  <div class="row">
+    <button class="btn ghost" id="bNew">🔀 خلط جديد</button>
+    <button class="btn" id="bHint">💡 تلميح</button>
+  </div>`);
+const board = OT.$('#board');
+OT.$('#bNew').onclick = init;
+OT.$('#bHint').onclick = hint;
+
+function validMoves(i) {
+  const r = Math.floor(i / N), c = i % N, m = [];
+  if (r > 0) m.push(i - N);
+  if (r < N - 1) m.push(i + N);
+  if (c > 0) m.push(i - 1);
+  if (c < N - 1) m.push(i + 1);
+  return m;
+}
+const score = () => Math.max(0, 2000 - (moves * 3 + seconds * 2));
+const correctCount = () => ELEMENTS.filter((e, i) => grid[i] && grid[i].z === e.z).length;
+
+function init() {
+  clearInterval(timer);
+  moves = 0; seconds = 0; won = false;
+  grid = ELEMENTS.slice(); grid.push(null);
+  // خلط بحركات صحيحة فقط → الأحجية قابلة للحل دائماً.
+  for (let k = 0; k < 400; k++) {
+    const e = grid.indexOf(null), m = validMoves(e), t = OT.pick(m);
+    [grid[e], grid[t]] = [grid[t], grid[e]];
+  }
+  timer = setInterval(() => { if (!won) { seconds++; hud(); } }, 1000);
+  draw();
+}
+function hud() {
+  OT.$('#sTime').textContent = OT.fmtTime(seconds);
+  OT.$('#sMoves').textContent = moves;
+  OT.$('#sScore').textContent = score();
+  OT.$('#prog').style.width = (correctCount() / ELEMENTS.length * 100) + '%';
+}
+function draw() {
+  const e = grid.indexOf(null), can = validMoves(e);
+  board.innerHTML = '';
+  grid.forEach((t, i) => {
+    if (!t) { board.appendChild(OT.el('div', { class: 'empty' })); return; }
+    const b = OT.el('button', { class: 'tile' + (ELEMENTS[i] && ELEMENTS[i].z === t.z ? ' ok' : '') + (can.includes(i) ? ' movable' : '') },
+      `<span class="sym">${t.sym}</span><span class="num">${t.z}</span><span class="nm">${t.name}</span>`);
+    b.style.background = `linear-gradient(200deg, ${t.color}, ${t.color}b3)`;
+    b.onclick = () => tap(i);
+    board.appendChild(b);
+  });
+  hud();
+}
+function tap(i) {
+  if (won) return;
+  const e = grid.indexOf(null);
+  if (!validMoves(e).includes(i)) { OT.sfx.bad(); return; }
+  [grid[e], grid[i]] = [grid[i], grid[e]];
+  moves++; OT.sfx.tap(); draw();
+  if (correctCount() === ELEMENTS.length) win();
+}
+function win() {
+  won = true; clearInterval(timer); OT.sfx.win(); OT.confetti();
+  OT.modal({ icon: '🏆', title: 'أحسنت! رتّبت العناصر بنجاح', lines: [
+    `عدد الحركات: <b>${moves}</b>`, `الزمن: <b>${OT.fmtTime(seconds)}</b>`,
+    `النقاط: <b style="color:var(--accent)">${score()}</b>`,
+  ], buttons: [{ label: 'لعبة جديدة', cls: 'gold', onClick: init }] });
+}
+function hint() {
+  // أول بلاطة ليست في مكانها: نخبر الطالب أيّ عنصر يضعه وأين.
+  const i = ELEMENTS.findIndex((e, k) => !grid[k] || grid[k].z !== e.z);
+  if (i < 0) return;
+  const e = ELEMENTS[i];
+  OT.toast(`التالي: ضع ${e.name} (${e.sym}، العدد الذري ${e.z}) في الخانة رقم ${i + 1}.`, '', 4200);
+}
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>مبدأ لوشاتيليه</title>
+<link rel="stylesheet" href="../shared/otwo.css">
+<style>
+  .tabs { display: flex; gap: 6px; padding: 4px; border-radius: 14px; background: rgba(255,255,255,.06); margin-bottom: 12px; }
+  .tabs button { flex: 1; border: 0; border-radius: 10px; padding: 9px; font: inherit; font-weight: 800; font-size: 14px;
+    color: var(--muted); background: transparent; cursor: pointer; }
+  .tabs button.on { background: rgba(0,180,216,.18); color: var(--primary); }
+  .eq { text-align: center; font-size: clamp(17px, 5.4vw, 24px); font-weight: 900; direction: ltr; padding: 12px 8px;
+    border-radius: 16px; background: linear-gradient(120deg, #2563eb, #7c3aed); box-shadow: 0 5px 0 #2a1a66; margin-bottom: 8px; }
+  .tags { display: flex; gap: 6px; justify-content: center; margin-bottom: 12px; flex-wrap: wrap; }
+  .scale-l { display: flex; justify-content: space-between; font-size: 12px; font-weight: 800; direction: ltr; margin-bottom: 4px; }
+  .track { position: relative; height: 16px; border-radius: 10px; direction: ltr;
+    background: linear-gradient(90deg, #26c6da, #46526a 50%, #ef5350); margin-bottom: 14px; }
+  .knob { position: absolute; top: 50%; width: 30px; height: 30px; margin: -15px 0 0 -15px; border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #ffe08a, #f59e0b); box-shadow: 0 3px 0 #8a5a00, 0 0 14px rgba(255,183,3,.6);
+    transition: left .45s cubic-bezier(.3,1.3,.5,1); left: 50%; }
+  .sides { display: grid; grid-template-columns: 1fr 2px 1fr; gap: 8px; direction: ltr; }
+  .sides .sep { background: rgba(255,255,255,.18); border-radius: 2px; }
+  .side h4 { margin: 0 0 6px; font-size: 12.5px; text-align: center; color: var(--muted); }
+  .sub { margin-bottom: 6px; }
+  .sub .nm { font-size: 12px; font-weight: 800; direction: ltr; text-align: center; }
+  .dots { display: flex; flex-wrap: wrap; gap: 3px; justify-content: center; min-height: 14px; }
+  .dots i { width: 12px; height: 12px; border-radius: 50%; animation: pop .2s; box-shadow: inset -2px -2px 0 rgba(0,0,0,.25); }
+  .conc { display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 8px; }
+  .cbox { text-align: center; padding: 8px 4px; border-radius: 14px; background: rgba(255,255,255,.05); border: 1px solid var(--line); }
+  .cbox .nm { font-weight: 900; direction: ltr; font-size: 15px; }
+  .cbox .pm { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 4px; }
+  .pm button { width: 34px; height: 34px; border-radius: 10px; border: 0; font-size: 20px; font-weight: 900; color: #fff; cursor: pointer;
+    background: linear-gradient(180deg, #2a3a5a, #17233b); box-shadow: 0 3px 0 var(--edge); }
+  .pm button:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--edge); }
+  .pm b { min-width: 22px; font-size: 17px; }
+  .why { min-height: 54px; font-size: 13.5px; line-height: 1.7; border-inline-start: 4px solid var(--accent); padding: 8px 12px;
+    background: rgba(255,183,3,.08); border-radius: 10px; margin-bottom: 12px; }
+  .q { font-size: 17px; font-weight: 800; text-align: center; line-height: 1.7; margin: 4px 0 12px; }
+  .ans { display: grid; gap: 10px; }
+</style>
+</head>
+<body>
+<div class="app" id="app"></div>
+<script src="../shared/otwo.js"></script>
+<script src="data.js"></script>
+<script>
+'use strict';
+/* مبدأ لوشاتيليه — وضعان:
+   استكشاف: غيّر التركيز/الحرارة/الضغط وشاهد إزاحة الاتزان مع تفسير كل إزاحة.
+   تحدّي: توقّع اتجاه الإزاحة قبل أن تراها. */
+const REACTIONS = (window.OTWO_DATA && window.OTWO_DATA.reactions) || [];
+const MAX = 12;
+const RC = ['#26c6da', '#42a5f5', '#26a69a'], PC = ['#ef5350', '#66bb6a', '#ffa726'];
+const app = OT.$('#app');
+let cur, pos = 0, idx = -1, tab = 'explore', score = 0, asked = 0, quiz;
+
+const copy = (r) => JSON.parse(JSON.stringify(r));
+const moles = (list) => list.reduce((s, x) => s + (+x.amount || 0), 0);
+const heatAr = (r) => r.heatEffect === 'exothermic' ? 'طارد للحرارة 🔥' : 'ماصّ للحرارة ❄️';
+
+function load(i) {
+  idx = i; cur = copy(REACTIONS[i]); cur.base = copy(REACTIONS[i]); pos = 0;
+}
+function randomReaction() {
+  if (REACTIONS.length < 2) return load(0);
+  let i; do { i = OT.rand(REACTIONS.length); } while (i === idx);
+  load(i);
+}
+
+/* اتجاه الإزاحة: +1 نحو النواتج، -1 نحو المتفاعلات، 0 لا إزاحة — مع التفسير. */
+function effect(kind, up, sub, isReactant) {
+  const r = cur;
+  if (kind === 'conc') {
+    const d = (up ? 1 : -1) * (isReactant ? 1 : -1);
+    return { d, why: `${up ? 'زيادة' : 'نقصان'} تركيز <b class="ltr">${OT.esc(sub)}</b> (${isReactant ? 'متفاعل' : 'ناتج'}) ← يُزاح الاتزان نحو ${d > 0 ? 'النواتج' : 'المتفاعلات'} ${up ? 'ليستهلك الزيادة' : 'ليعوّض النقص'}.` };
+  }
+  if (kind === 'temp') {
+    const exo = r.heatEffect === 'exothermic';
+    const d = (up ? 1 : -1) * (exo ? -1 : 1);
+    return { d, why: `التفاعل ${exo ? 'طارد' : 'ماصّ'} للحرارة. ${up ? 'رفع' : 'خفض'} الحرارة ← يُزاح الاتزان نحو ${d > 0 ? 'النواتج' : 'المتفاعلات'} (الاتجاه ${up ? 'الماصّ' : 'الطارد'} للحرارة).` };
+  }
+  // الضغط: يُقارن بعدد مولات الغاز في المعادلة الموزونة.
+  if (r.type !== 'gas') return { d: 0, why: 'التفاعل في محلول، فتغيير الضغط لا يؤثّر على اتزانه.' };
+  const a = moles(r.base.reactants), b = moles(r.base.products);
+  if (a === b) return { d: 0, why: `عدد مولات الغاز متساوٍ في الطرفين (${a} = ${b})، فتغيير الضغط لا يُزيح الاتزان.` };
+  const fewerIsProducts = b < a;
+  const d = up ? (fewerIsProducts ? 1 : -1) : (fewerIsProducts ? -1 : 1);
+  return { d, why: `المتفاعلات ${a} مول والنواتج ${b} مول. ${up ? 'زيادة' : 'نقصان'} الضغط ← يُزاح الاتزان نحو الطرف ${up ? 'الأقل' : 'الأكثر'} مولات: ${d > 0 ? 'النواتج' : 'المتفاعلات'}.` };
+}
+function apply(e) { pos = OT.clamp(Math.round((pos + e.d * 0.2) * 10) / 10, -1, 1); }
+
+function shell() {
+  app.innerHTML = '';
+  app.appendChild(OT.topbar('مبدأ لوشاتيليه', [
+    'إذا أثّر عاملٌ خارجي على نظام متّزن، يُزاح الاتزان في الاتجاه الذي يقلّل أثر هذا العامل.',
+    '<b>استكشاف:</b> غيّر التركيز أو الحرارة أو الضغط وشاهد الإزاحة وتفسيرها.',
+    '<b>تحدّي:</b> توقّع اتجاه الإزاحة أولاً ثم تحقّق.',
+  ]));
+  if (!REACTIONS.length) {
+    app.insertAdjacentHTML('beforeend', '<div class="card center muted">لا توجد تفاعلات. أضِفها في ملف data.js.</div>'); return false;
+  }
+  app.insertAdjacentHTML('beforeend', `
+    <div class="tabs"><button data-t="explore">🔬 استكشاف</button><button data-t="quiz">🎯 تحدّي</button></div>
+    <div class="eq" id="eq"></div><div class="tags" id="tags"></div>
+    <div class="card">
+      <div class="scale-l"><span style="color:#26c6da">◀ متفاعلات</span><span class="muted">اتزان</span><span style="color:#ef5350">نواتج ▶</span></div>
+      <div class="track"><div class="knob" id="knob"></div></div>
+      <div class="sides"><div class="side" id="sR"></div><div class="sep"></div><div class="side" id="sP"></div></div>
+    </div>
+    <div id="panel"></div>`);
+  for (const b of OT.$$('.tabs button')) { b.classList.toggle('on', b.dataset.t === tab);
+    b.onclick = () => { tab = b.dataset.t; load(idx); shell() && render(); }; }
+  return true;
+}
+function renderBoard() {
+  OT.$('#eq').textContent = cur.name;
+  OT.$('#tags').innerHTML = `<span class="chip">${cur.type === 'gas' ? 'تفاعل غازي' : 'تفاعل في محلول'}</span>
+    <span class="chip gold">${heatAr(cur)}</span>`;
+  OT.$('#knob').style.left = ((pos + 1) / 2 * 100) + '%';
+  // الإزاحة تُرى في الجسيمات: نحو النواتج ← نواتج أكثر ومتفاعلات أقل.
+  const side = (list, colors, sign, title) => `<h4>${title}</h4>` + list.map((s, i) => {
+    const n = OT.clamp(Math.round(s.amount * 2 + sign * pos * 3), 0, MAX);
+    return `<div class="sub"><div class="nm" style="color:${colors[i % 3]}">${OT.esc(s.name)}</div>
+      <div class="dots">${`<i style="background:${colors[i % 3]}"></i>`.repeat(n)}</div></div>`; }).join('');
+  OT.$('#sR').innerHTML = side(cur.reactants, RC, -1, 'المتفاعلات');
+  OT.$('#sP').innerHTML = side(cur.products, PC, +1, 'النواتج');
+}
+
+function render() { renderBoard(); (tab === 'explore' ? explore : quizPanel)(); }
+
+function explore(why) {
+  const box = (s, isR, colors, i) => `<div class="cbox"><div class="nm" style="color:${colors[i % 3]}">${OT.esc(s.name)}</div>
+    <div class="pm"><button data-c="${isR ? 'r' : 'p'}${i}-">−</button><b>${s.amount}</b><button data-c="${isR ? 'r' : 'p'}${i}+">+</button></div></div>`;
+  OT.$('#panel').innerHTML = `
+    <div class="why" id="why">${why || 'غيّر أحد العوامل لترى اتجاه الإزاحة وسببها.'}</div>
+    <div class="card"><b>⚗️ التركيز</b><div class="conc" style="margin-top:8px">
+      ${cur.reactants.map((s, i) => box(s, true, RC, i)).join('')}${cur.products.map((s, i) => box(s, false, PC, i)).join('')}</div></div>
+    <div class="card"><div class="row" style="margin-bottom:10px">
+        <button class="btn red" data-k="temp+">🔥 رفع الحرارة</button><button class="btn" data-k="temp-">❄️ خفض الحرارة</button></div>
+      <div class="row"><button class="btn ghost" data-k="pres+">💨 زيادة الضغط</button><button class="btn ghost" data-k="pres-">🎈 نقصان الضغط</button></div></div>
+    <div class="row"><button class="btn ghost" id="bReset">↺ إعادة</button><button class="btn gold" id="bNew">🔀 معادلة جديدة</button></div>`;
+  for (const b of OT.$$('[data-c]')) b.onclick = () => {
+    const isR = b.dataset.c[0] === 'r', i = +b.dataset.c.slice(1, -1), up = b.dataset.c.endsWith('+');
+    const s = (isR ? cur.reactants : cur.products)[i];
+    if (up ? s.amount >= MAX : s.amount <= 0) return OT.sfx.bad();
+    s.amount += up ? 1 : -1; step(effect('conc', up, s.name, isR));
+  };
+  for (const b of OT.$$('[data-k]')) b.onclick = () => step(effect(b.dataset.k.slice(0, 4), b.dataset.k.endsWith('+')));
+  OT.$('#bReset').onclick = () => { load(idx); render(); };
+  OT.$('#bNew').onclick = () => { randomReaction(); render(); };
+}
+function step(e) { apply(e); e.d ? OT.sfx.ok() : OT.sfx.tap(); renderBoard(); explore((e.d === 0 ? '⚖️ ' : e.d > 0 ? '➡️ ' : '⬅️ ') + e.why); }
+
+function newQuestion() {
+  randomReaction();
+  const kinds = [['temp', true, 'رفع درجة الحرارة'], ['temp', false, 'خفض درجة الحرارة'],
+    ['pres', true, 'زيادة الضغط'], ['pres', false, 'نقصان الضغط']];
+  const subs = cur.reactants.map((s) => [s, true]).concat(cur.products.map((s) => [s, false]));
+  const [s, isR] = OT.pick(subs);
+  kinds.push(['conc', true, `زيادة تركيز ${s.name}`, s.name, isR], ['conc', false, `سحب جزء من ${s.name}`, s.name, isR]);
+  const k = OT.pick(kinds);
+  quiz = { text: k[2], e: effect(k[0], k[1], k[3], k[4]), done: false };
+}
+function quizPanel() {
+  if (!quiz || quiz.done) newQuestion();
+  renderBoard();
+  OT.$('#panel').innerHTML = `
+    <div class="stats"><div class="stat"><b>${score}</b><span>إجابات صحيحة</span></div><div class="stat"><b>${asked}</b><span>الأسئلة</span></div></div>
+    <div class="card"><div class="q">ماذا يحدث للاتزان عند <span style="color:var(--accent)" class="ltr">${OT.esc(quiz.text)}</span>؟</div>
+      <div class="ans"><button class="btn" data-a="1">➡️ يُزاح نحو النواتج</button>
+        <button class="btn" data-a="-1">⬅️ يُزاح نحو المتفاعلات</button>
+        <button class="btn ghost" data-a="0">⚖️ لا يتأثر</button></div></div>
+    <div class="why" id="why" style="display:none"></div>
+    <button class="btn gold" id="bNext" style="display:none;width:100%">السؤال التالي ◀</button>`;
+  for (const b of OT.$$('[data-a]')) b.onclick = () => {
+    if (quiz.done) return;
+    quiz.done = true; asked++;
+    const ok = +b.dataset.a === quiz.e.d;
+    if (ok) { score++; OT.sfx.ok(); } else { OT.sfx.bad(); b.classList.add('shake'); }
+    for (const x of OT.$$('[data-a]')) { x.className = 'btn ' + (+x.dataset.a === quiz.e.d ? 'green' : x === b ? 'red' : 'ghost'); x.disabled = true; }
+    apply(quiz.e); renderBoard();
+    const w = OT.$('#why'); w.style.display = 'block'; w.innerHTML = (ok ? '✅ صحيح! ' : '❌ ') + quiz.e.why;
+    OT.$('#bNext').style.display = 'block';
+    OT.$$('.stat b')[0].textContent = score; OT.$$('.stat b')[1].textContent = asked;
+    if (ok && score % 5 === 0) OT.confetti(40);
+  };
+  OT.$('#bNext').onclick = () => { quiz = null; quizPanel(); };
+}
+
+if (REACTIONS.length) load(0);
+if (shell()) render();
+</script>
+</body>
+</html>
