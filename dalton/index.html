@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>قانون دالتون: حفلة الغازات في الوعاء الكبير</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lalezar&family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#1d1b3a;--paper:#f3f1ff;--sun:#ffd23f;--card:#fff;--ok:#14a85a;--no:#e0364f}
+@media (prefers-color-scheme:dark){:root{--ink:#f3f1ff;--paper:#1b1a33;--card:#26244a}}
+*{box-sizing:border-box}
+body{margin:0;color:var(--ink);font-family:Tajawal,Tahoma,sans-serif;line-height:1.7;min-height:100vh;
+background:radial-gradient(circle at 12% 8%,rgba(255,255,255,.4),transparent 38%),radial-gradient(circle at 88% 92%,rgba(0,255,225,.3),transparent 45%),linear-gradient(135deg,#5b6bff 0%,#a14bff 38%,#ff5fa2 72%,#ffb04a 100%);background-attachment:fixed}
+@media (prefers-color-scheme:dark){body{background:radial-gradient(circle at 12% 8%,rgba(160,140,255,.3),transparent 38%),radial-gradient(circle at 88% 92%,rgba(0,200,190,.25),transparent 45%),linear-gradient(135deg,#1c2260 0%,#4a1d8f 40%,#8a1f5e 75%,#a3541a 100%);background-attachment:fixed}}
+.orbs{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:0}
+.orbs span{position:absolute;aspect-ratio:1;border-radius:50%;background:radial-gradient(circle at 30% 26%,#fff 0,rgba(255,255,255,.85) 5%,var(--o) 30%,var(--d) 100%);box-shadow:inset -14px -18px 36px rgba(0,0,0,.28),0 40px 50px -12px rgba(0,0,0,.35);animation:fl 7s ease-in-out infinite alternate}
+.orbs span:nth-child(1){width:min(24vw,230px);top:7%;left:-4%;--o:#ffd23f;--d:#ff8a00}
+.orbs span:nth-child(2){width:min(18vw,170px);top:40%;right:-3%;--o:#35e0ff;--d:#1b6bff;animation-delay:-2s}
+.orbs span:nth-child(3){width:min(13vw,125px);bottom:5%;left:9%;--o:#ff7ad9;--d:#b0189a;animation-delay:-4s}
+.orbs span:nth-child(4){width:min(10vw,95px);bottom:14%;right:12%;--o:#7dffb2;--d:#0aa56a;animation-delay:-1s}
+.orbs span:nth-child(5){width:min(8vw,70px);top:4%;right:28%;--o:#c4a8ff;--d:#5a2bd6;animation-delay:-3s}
+@keyframes fl{to{transform:translateY(-28px)}}
+.wrap{position:relative;z-index:1;max-width:1050px;margin:0 auto;padding:20px 16px 50px}
+header{background:var(--sun);color:#1d1b3a;border:4px solid #1d1b3a;border-radius:40px 18px 40px 18px;box-shadow:8px 8px 0 #1d1b3a;padding:18px 24px;margin:12px 0 26px;transform:rotate(.6deg)}
+h1{font-family:Lalezar,Tahoma,sans-serif;font-weight:400;font-size:clamp(26px,5vw,46px);margin:0;line-height:1.25}
+header p{margin:6px 0 0;font-size:1.05rem}
+.badge{display:inline-block;background:#1d1b3a;color:#fff;border-radius:99px;padding:2px 14px;font-weight:700;margin-top:10px;font-size:.95rem}
+.stage{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
+.mixcard{display:flex;flex-direction:column}
+.mixface{text-align:center;font-size:2.4rem;line-height:1.2;margin-top:10px}
+.mixcard .big{margin-bottom:14px}
+.mixcard .bubble{margin-top:auto}
+.gas,.panel{background:var(--card);border:4px solid var(--ink);box-shadow:7px 7px 0 var(--ink)}
+.gas{border-radius:26px 10px 26px 10px;padding:14px}
+.gas:nth-child(2){border-radius:10px 26px 10px 26px}
+.gas h2{font-family:Lalezar,Tahoma,sans-serif;font-weight:400;margin:0;display:flex;justify-content:center}
+.sym{padding:0 14px;border:3px solid var(--ink);border-radius:12px;color:#1d1b3a;font-size:1.8rem;line-height:1.5;white-space:nowrap}
+.mass{font-size:.85rem;opacity:.8;margin:0 0 6px;text-align:center}
+canvas{width:100%;height:auto;display:block;border-radius:10px}
+.sl{display:flex;flex-direction:column;align-items:stretch;gap:4px;margin:8px 0 2px;font-weight:700}
+.sl input{width:100%;direction:ltr;height:26px;cursor:pointer;accent-color:var(--c)}
+.sl input:disabled{cursor:not-allowed;opacity:.45}
+.sl output{align-self:center;min-width:90px;text-align:center;direction:ltr;background:var(--sun);color:#1d1b3a;border:3px solid #1d1b3a;border-radius:10px;padding:0 6px}
+.bubble{position:relative;margin-top:14px;background:var(--sun);color:#1d1b3a;border:3px solid #1d1b3a;border-radius:16px;padding:6px 12px;font-size:.95rem;min-height:3.4em}
+.bubble:before{content:"";position:absolute;top:-12px;right:26px;border:10px solid transparent;border-bottom-color:#1d1b3a;border-top:0}
+.panel{margin-top:28px;border-radius:20px;padding:18px 20px}
+.panel h3{font-family:Lalezar,Tahoma,sans-serif;font-weight:400;font-size:1.5rem;margin:0 0 8px}
+.mixtop{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap}
+.mood{font-weight:700;font-size:1.05rem;display:flex;align-items:center;gap:10px}
+.mood span{font-size:2.6rem;line-height:1}
+.mixbody{display:grid;grid-template-columns:minmax(0,320px) 1fr;gap:20px;align-items:center;margin-top:6px}
+.big{font-family:Lalezar,Tahoma,sans-serif;font-size:3rem;line-height:1.1;direction:ltr;text-align:center}
+.verdict{font-size:1.2rem;font-weight:700;margin:6px 0 12px}
+.bar{display:flex;height:44px;border:3px solid var(--ink);border-radius:12px;overflow:hidden;background:rgba(120,130,200,.15)}
+.bar i{display:flex;align-items:center;justify-content:center;font-style:normal;font-weight:700;color:#1d1b3a;font-size:.9rem;overflow:hidden;white-space:nowrap;transition:width .5s;border-inline-start:3px solid var(--ink)}
+.bar i:first-child{border-inline-start:0}
+.scale{display:flex;justify-content:space-between;font-size:.8rem;opacity:.8;direction:ltr}
+.eq{font-family:Lalezar,Tahoma,sans-serif;font-size:1.6rem;margin:10px 0;direction:ltr;text-align:center}
+table{width:100%;border-collapse:collapse;text-align:center;margin-top:8px}
+th,td{border:2px solid var(--ink);padding:6px 8px}
+th{background:var(--sun);color:#1d1b3a}
+td.ltr{direction:ltr}
+tfoot td{font-weight:700;background:rgba(255,210,63,.35)}
+.btns{display:flex;flex-wrap:wrap;gap:12px;margin-top:16px}
+button{font:inherit;font-weight:700;cursor:pointer;background:#ff5d8f;color:#1d1b3a;border:3px solid #1d1b3a;border-radius:12px;padding:8px 18px;box-shadow:4px 4px 0 #1d1b3a;transition:transform .08s,box-shadow .08s}
+.btns button:nth-child(2){background:#2f9bff}.btns button:nth-child(3){background:#3fbf7f}
+.pour{width:100%;margin-top:10px;background:var(--c);padding:6px 8px}
+button:active{transform:translate(4px,4px);box-shadow:0 0 0 #1d1b3a}
+button:focus-visible,input:focus-visible{outline:4px solid var(--sun);outline-offset:3px}
+.note{font-size:.9rem;opacity:.85;margin-top:14px}
+footer{text-align:center;margin-top:26px;font-size:.95rem;color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.45)}
+@media (max-width:760px){
+.big{font-size:1.05rem}.mixface{font-size:1.6rem;margin-top:6px}.mixcard .big{margin-bottom:8px}.stage{gap:4px}
+.wrap{padding:12px 6px 40px}
+.stage{gap:6px}
+.gas{padding:6px;border-width:3px;box-shadow:4px 4px 0 var(--ink);border-radius:14px}
+.mass{display:none}
+.sym{padding:0 8px;font-size:1.3rem;border-width:2px}
+.sl{flex-direction:column;gap:2px;font-size:.78rem;margin:6px 0 2px}
+.sl input{width:100%;flex:none}
+.sl output{min-width:0;border-width:2px;font-size:.78rem}
+.bubble{font-size:.72rem;padding:4px 6px;border-width:2px;border-radius:10px}
+.bubble:before{right:14px}
+.pour{font-size:.8rem;padding:4px;border-width:2px}
+.panel{padding:12px 10px}
+.eq{font-size:1.15rem}
+th,td{padding:4px;font-size:.8rem}
+.bar i{font-size:.75rem}
+}
+@media (prefers-reduced-motion:reduce){.orbs span{animation:none}header{transform:none}.bar i{transition:none}}
+</style>
+</head>
+<body>
+<div class="orbs" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
+<div class="wrap">
+<header>
+  <h1>🍲 حفلة الغازات في الوعاء الكبير</h1>
+  <p>قال دالتون: ضغط خليط الغازات يساوي مجموع الضغوط الجزئية لكل غاز. اسكب الغازات واحداً بعد الآخر، وراقب ضغط كل غاز يبقى كما هو ثم يُضاف إلى الباقين!</p>
+  <span class="badge">🔒 الحرارة ثابتة، والحجم ثابت (5 لتر) في الأوعية الأربعة، والغازات لا تتفاعل</span>
+</header>
+
+<main class="stage" id="stage">
+<article class="gas mixcard" id="mixcard" style="--c:#1d1b3a">
+  <h2><span class="sym" style="background:#ffd23f">🏺</span></h2>
+  <p class="mass">الوعاء الكبير · V = 5 L</p>
+  <canvas id="mixcv" width="300" height="240" aria-label="الوعاء الكبير"></canvas>
+  <div class="mixface"><span id="face">😶</span></div>
+  <div class="big" id="big">0 kPa</div>
+  <div class="bubble" id="moodtxt"></div>
+</article>
+</main>
+
+<section class="panel" aria-live="polite">
+  <h3>⚖️ محكمة دالتون</h3>
+  <div class="verdict" id="verdict"></div>
+  <div class="bar" id="bar"></div>
+  <div class="scale"><span>0</span><span id="scmax"></span></div>
+  <div class="eq" id="eq"></div>
+  <table>
+    <thead><tr><th>الغاز</th><th>ضغطه في وعائه</th><th>ضغطه الجزئي في الوعاء الكبير</th></tr></thead>
+    <tbody id="rows"></tbody>
+    <tfoot><tr><td>الخليط</td><td></td><td class="ltr" id="tot"></td></tr></tfoot>
+  </table>
+  <p class="note">لأن حجم الوعاء الكبير يساوي حجم كل وعاء صغير والحرارة ثابتة، يبقى ضغط كل غاز كما هو عند صبه. وكل غاز يضغط على الجدران كأنه وحده، فيضيف ضغطه إلى ضغط الباقين.</p>
+  <div class="btns">
+    <button id="seq">🍾 اسكبهم بالتتابع</button>
+    <button id="clr">🧹 أفرغ الوعاء</button>
+    <button id="rnd">🎲 قيم عشوائية</button>
+  </div>
+</section>
+<footer>محاكاة مبسطة لغازات مثالية. الضغط بوحدة kPa، والحجم الثابت 5 لتر.</footer>
+</div>
+
+<script>
+const SW=300,SH=240;
+const gases=[
+ {n:'الهيدروجين',s:'H₂',r:6,sp:150,c:'#ff5d8f',P:150,
+  ini:'خفيف الوزن لكن ضغطي محترم! 💪',
+  pour:['انطلقت للوعاء الكبير بخفة الريشة. 🪽','كنت أول الواصلين، والمكان لي… مؤقتاً. 😎'],
+  back:['رجعت لوعائي الصغير، فيه دفء وراحة.','كانت رحلة قصيرة لكنها ممتعة. 🧳']},
+ {n:'الأكسجين',s:'O₂',r:8.5,sp:75,c:'#2f9bff',P:200,
+  ini:'أنا هادئ، لكن ضغطي محسوب عليّ. 😌',
+  pour:['دخلت بهدوء، وضغطي معي كما هو. 🚪','تفضلوا جميعاً، وأنا أضغط كأني وحدي! 🕺'],
+  back:['عدت لبيتي، أنفاسي مرتاحة. 😮‍💨','الوعاء الكبير جميل لكن بيتي أدفأ.']},
+ {n:'ثاني أكسيد الكربون',s:'CO₂',r:10,sp:62,c:'#3fbf7f',P:100,
+  ini:'ثقيل الكتلة، لكن ضغطي أثقل! 🏋️',
+  pour:['وصلت متأخراً، لكن بضغط وازن. 🎩','دخلت بوقار، وكل شيء يتبعني. 🚶'],
+  back:['رجعت إلى وعائي، وداعاً أيها الخليط. 👋','يكفيني هذا القدر من الحفلات. 🥱']}
+];
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const nOf=g=>Math.round(g.P/10);
+let timers=[];
+const stage=document.getElementById('stage'),mixcv=document.getElementById('mixcv'),mctx=mixcv.getContext('2d');
+gases.forEach(g=>{
+  const el=document.createElement('article');el.className='gas';el.style.setProperty('--c',g.c);
+  el.innerHTML=`<h2><span class="sym" style="background:${g.c}">${g.s}</span></h2>
+  <p class="mass">${g.n} · V = 5 L</p>
+  <canvas width="${SW}" height="${SH}" aria-label="وعاء ${g.n}"></canvas>
+  <label class="sl">الضغط <input class="ip" type="range" min="50" max="300" step="10" value="${g.P}" aria-label="ضغط ${g.n}"><output class="op"></output></label>
+  <button class="pour"></button>
+  <div class="bubble"></div>`;
+  stage.appendChild(el);
+  g.cv=el.querySelector('canvas');g.ctx=g.cv.getContext('2d');
+  g.ip=el.querySelector('.ip');g.op=el.querySelector('.op');
+  g.btn=el.querySelector('.pour');g.bub=el.querySelector('.bubble');
+  g.p=[];g.mp=[];g.poured=false;
+  g.ip.oninput=()=>{g.P=+g.ip.value;update()};
+  g.btn.onclick=()=>{stopSeq();setPoured(g,!g.poured,true)};
+  g.bub.textContent=g.ini;
+});
+stage.appendChild(document.getElementById('mixcard'));
+function setPoured(g,v,talk){
+  g.poured=v;if(talk)g.bub.textContent=pick(v?g.pour:g.back);update();
+}
+function stopSeq(){timers.forEach(clearTimeout);timers=[]}
+function update(){
+  let total=0,parts=[],segs='';
+  const rows=gases.map(g=>{
+    g.op.textContent=g.P+' kPa';g.ip.disabled=g.poured;
+    g.btn.textContent=g.poured?'↩️ أعدني':'⬇️ اسكبني';
+    if(g.poured){total+=g.P;parts.push(g.P)}
+    return `<tr><td style="background:${g.c};color:#1d1b3a;font-weight:700">${g.s}</td><td class="ltr">${g.P} kPa</td><td class="ltr">${g.poured?'<b>'+g.P+' kPa</b> (لم يتغير!)':'—'}</td></tr>`;
+  });
+  document.getElementById('rows').innerHTML=rows.join('');
+  const sc=Math.max(300,Math.ceil(total/100)*100);
+  gases.forEach(g=>{if(g.poured)segs+=`<i style="width:${g.P/sc*100}%;background:${g.c}">${g.s} ${g.P}</i>`});
+  document.getElementById('bar').innerHTML=segs;
+  document.getElementById('scmax').textContent=sc+' kPa';
+  document.getElementById('eq').textContent=parts.length?`P = ${parts.join(' + ')} = ${total} kPa`:'P = 0 kPa';
+  document.getElementById('tot').innerHTML=parts.length?`Σ = <b>${total} kPa</b>`:'0 kPa';
+  document.getElementById('big').textContent=total+' kPa';
+  const k=parts.length;
+  document.getElementById('verdict').textContent=[
+    '🫥 الوعاء فارغ، فضغطه صفر ومزاجه سيئ. اسكب غازاً!',
+    '☝️ غاز واحد: ضغط الوعاء هو ضغط هذا الغاز نفسه، لم يتغير منه شيء.',
+    '✌️ غازان: الضغط الكلي = ضغط الأول + ضغط الثاني، بلا خلافات.',
+    '🎉 ثلاثة غازات! الضغط الكلي = مجموع الثلاثة، وكل غاز يتصرف كأنه وحده.'][k];
+  const mood=total===0?['😶','لا أحد في الوعاء… الصمت مطبق.']:total<200?['😎','ضغط مريح، الوعاء مبتسم.']:total<400?['😅','الضغط يزداد، لكن الوعاء صامد.']:total<600?['😰','الوعاء يتصبب عرقاً وهو يحصي الغازات!']:['🤯','الوعاء يطلب إجازة مرضية فوراً!'];
+  document.getElementById('face').textContent=mood[0];document.getElementById('moodtxt').textContent=mood[1];
+}
+function spawn(arr,g,y0,y1){
+  const a=Math.random()*6.283,s=g.sp*(.7+Math.random()*.6);
+  arr.push({x:g.r+Math.random()*(SW-2*g.r),y:y0+g.r+Math.random()*Math.max(1,y1-y0-2*g.r),vx:Math.cos(a)*s,vy:Math.sin(a)*s});
+}
+function mv(p,dt,r){
+  p.x+=p.vx*dt;p.y+=p.vy*dt;
+  if(p.x<r){p.x=r;p.vx=Math.abs(p.vx)}else if(p.x>SW-r){p.x=SW-r;p.vx=-Math.abs(p.vx)}
+  if(p.y<r){p.y=r;p.vy=Math.abs(p.vy)}else if(p.y>SH-r){p.y=SH-r;p.vy=-Math.abs(p.vy)}
+}
+function face(c,p,r,col,ink){
+  c.beginPath();c.arc(p.x,p.y,r,0,6.283);c.fillStyle=col;c.fill();c.lineWidth=2;c.strokeStyle=ink;c.stroke();
+  const m=Math.hypot(p.vx,p.vy)||1,ox=p.vx/m*r*.12,oy=p.vy/m*r*.12;
+  [-1,1].forEach(d=>{const ex=p.x+d*r*.38,ey=p.y-r*.15;
+    c.beginPath();c.arc(ex,ey,r*.3,0,6.283);c.fillStyle='#fff';c.fill();
+    c.beginPath();c.arc(ex+ox,ey+oy,r*.14,0,6.283);c.fillStyle=ink;c.fill();});
+}
+const ink='#1d1b3a';
+let last=performance.now();
+function loop(t){
+  const dt=Math.min(.05,(t-last)/1000);last=t;
+  mctx.clearRect(0,0,SW,SH);
+  mctx.fillStyle='rgba(120,130,200,.12)';mctx.fillRect(0,0,SW,SH);
+  gases.forEach(g=>{
+    const c=g.ctx,n=nOf(g),st=g.poured?0:n,mt=g.poured?n:0;
+    if(g.p.length<st)spawn(g.p,g,0,SH);else if(g.p.length>st)g.p.pop();
+    if(g.mp.length<mt)spawn(g.mp,g,0,70);else if(g.mp.length>mt)g.mp.pop();
+    g.p.forEach(p=>mv(p,dt,g.r));g.mp.forEach(p=>mv(p,dt,g.r));
+    c.clearRect(0,0,SW,SH);c.fillStyle=g.c+'33';c.fillRect(0,0,SW,SH);
+    if(g.poured){c.setLineDash([8,6]);c.lineWidth=3;c.strokeStyle=ink;c.strokeRect(8,8,SW-16,SH-16);c.setLineDash([])}
+    g.p.forEach(p=>face(c,p,g.r,g.c,ink));
+    c.lineWidth=5;c.strokeStyle=ink;c.strokeRect(2.5,2.5,SW-5,SH-5);
+  });
+  gases.forEach(g=>g.mp.forEach(p=>face(mctx,p,g.r,g.c,ink)));
+  mctx.lineWidth=6;mctx.strokeStyle=ink;mctx.strokeRect(3,3,SW-6,SH-6);
+  mctx.fillStyle=ink;mctx.fillRect(SW/2-14,0,28,10);
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+document.getElementById('clr').onclick=()=>{stopSeq();gases.forEach(g=>setPoured(g,false,false));};
+document.getElementById('seq').onclick=()=>{
+  stopSeq();gases.forEach(g=>setPoured(g,false,false));
+  gases.forEach((g,i)=>timers.push(setTimeout(()=>setPoured(g,true,true),600+i*1800)));
+};
+document.getElementById('rnd').onclick=()=>{
+  stopSeq();gases.forEach(g=>{g.poured=false;g.P=50+10*Math.floor(Math.random()*26);g.ip.value=g.P;});
+  update();
+};
+update();
+</script>
+</body>
+</html>
