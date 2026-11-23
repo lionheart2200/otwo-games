@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>فرضية أفوجادرو: مسرحية الغازات الثلاثة</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lalezar&family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#1d1b3a;--paper:#f3f1ff;--sun:#ffd23f;--card:#fff;--h2:#ff5d8f;--o2:#2f9bff;--co2:#3fbf7f;--ok:#14a85a;--no:#e0364f}
+@media (prefers-color-scheme:dark){:root{--ink:#f3f1ff;--paper:#1b1a33;--card:#26244a}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:Tajawal,Tahoma,sans-serif;line-height:1.7;
+background-image:radial-gradient(var(--ink) 1px,transparent 1.5px);background-size:26px 26px;background-position:0 0}
+.wrap{max-width:1050px;margin:0 auto;padding:20px 16px 50px}
+header{background:var(--sun);color:#1d1b3a;border:4px solid #1d1b3a;border-radius:18px 40px 18px 40px;box-shadow:8px 8px 0 #1d1b3a;padding:18px 24px;margin:12px 0 26px;transform:rotate(-.6deg)}
+h1{font-family:Lalezar,Tahoma,sans-serif;font-weight:400;font-size:clamp(28px,5vw,48px);margin:0;line-height:1.25}
+header p{margin:6px 0 0;font-size:1.05rem}
+.badge{display:inline-block;background:#1d1b3a;color:#fff;border-radius:99px;padding:2px 14px;font-weight:700;margin-top:10px;font-size:.95rem}
+.stage{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px}
+@media (max-width:760px){
+.wrap{padding:12px 6px 40px}
+.stage{gap:6px}
+.gas{padding:6px;border-width:3px;box-shadow:4px 4px 0 var(--ink);border-radius:14px}
+.gas h2{flex-direction:column;font-size:.95rem;line-height:1.3;text-align:center;gap:2px}
+.sym{padding:0 6px;border-width:2px;font-size:.85rem}
+.mass{display:none}
+.sl{flex-direction:column;gap:2px;font-size:.8rem;margin:6px 0 2px}
+.sl input{width:100%;flex:none}
+.sl output{min-width:0;border-width:2px;font-size:.8rem}
+.count{flex-direction:column;align-items:center;text-align:center;gap:2px}
+.count b{font-size:1.5rem}
+.count small,.real{font-size:.7rem}
+.bubble{font-size:.72rem;padding:4px 6px;border-width:2px;border-radius:10px}
+.bubble:before{right:14px}
+.badge{font-size:.8rem}
+th,td{padding:4px;font-size:.85rem}
+}
+.gas{background:var(--card);border:4px solid var(--ink);border-radius:26px 10px 26px 10px;box-shadow:7px 7px 0 var(--ink);padding:14px}
+.gas:nth-child(2){border-radius:10px 26px 10px 26px}
+.gas h2{font-family:Lalezar,Tahoma,sans-serif;font-weight:400;font-size:1.6rem;margin:0;display:flex;justify-content:space-between;align-items:center}
+.gas h2{justify-content:center}
+.sym{padding:0 18px;border:3px solid var(--ink);border-radius:12px;color:#1d1b3a;font-size:1.8rem;line-height:1.5;white-space:nowrap}
+@media (max-width:760px){.sym{padding:0 8px;font-size:1.3rem;border-width:2px}.gas h2{margin-bottom:4px}}
+.mass{font-size:.85rem;opacity:.8;margin:0 0 6px}
+canvas{width:100%;height:auto;display:block;border-radius:10px}
+.sl{display:flex;align-items:center;gap:10px;margin:10px 0 4px;font-weight:700}
+.sl input{flex:1;direction:ltr;height:28px;cursor:pointer;accent-color:var(--c)}
+.sl output{min-width:62px;text-align:center;background:var(--sun);color:#1d1b3a;border:3px solid #1d1b3a;border-radius:10px;padding:0 6px}
+.count{display:flex;justify-content:space-between;align-items:baseline;border-top:3px dashed var(--ink);margin-top:10px;padding-top:8px}
+.count b{font-family:Lalezar,Tahoma,sans-serif;font-weight:400;font-size:2.4rem;line-height:1}
+.count small{display:block;font-size:.85rem;opacity:.85}
+.real{font-size:.85rem;margin-top:4px;direction:rtl}
+.bubble{position:relative;margin-top:14px;background:var(--sun);color:#1d1b3a;border:3px solid #1d1b3a;border-radius:16px;padding:6px 12px;font-size:.95rem;min-height:3.4em}
+.bubble:before{content:"";position:absolute;top:-12px;right:26px;border:10px solid transparent;border-bottom-color:#1d1b3a;border-top:0}
+.panel{margin-top:30px;background:var(--card);border:4px solid var(--ink);border-radius:20px;box-shadow:7px 7px 0 var(--ink);padding:18px 20px}
+.panel h3{font-family:Lalezar,Tahoma,sans-serif;font-weight:400;font-size:1.5rem;margin:0 0 8px}
+.verdict{font-size:1.25rem;font-weight:700;margin:6px 0 14px}
+.verdict.win{color:var(--ok)}
+table{width:100%;border-collapse:collapse;text-align:center}
+th,td{border:2px solid var(--ink);padding:6px 8px}
+th{background:var(--sun);color:#1d1b3a}
+.y{color:var(--ok);font-weight:700}.n{color:var(--no);font-weight:700}
+.btns{display:flex;flex-wrap:wrap;gap:12px;margin-top:16px}
+button{font:inherit;font-weight:700;cursor:pointer;background:var(--h2);color:#1d1b3a;border:3px solid #1d1b3a;border-radius:12px;padding:8px 18px;box-shadow:4px 4px 0 #1d1b3a;transition:transform .08s,box-shadow .08s}
+button:nth-child(2){background:var(--o2)}button:nth-child(3){background:var(--co2)}
+button:active{transform:translate(4px,4px);box-shadow:0 0 0 #1d1b3a}
+button:focus-visible,input:focus-visible{outline:4px solid var(--sun);outline-offset:3px}
+.note{font-size:.9rem;opacity:.85;margin-top:14px}
+footer{text-align:center;margin-top:26px;font-size:.9rem;opacity:.8}
+.pop{position:fixed;top:-40px;font-size:2rem;pointer-events:none;animation:fall 2.4s ease-in forwards;z-index:9}
+@keyframes fall{to{transform:translateY(110vh) rotate(540deg);opacity:.2}}
+@media (prefers-reduced-motion:reduce){.pop{display:none}header{transform:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>🎈 ثلاثة غازات، ثلاثة أوعية، وفرضية واحدة عنيدة</h1>
+  <p>قال أفوجادرو: الحجوم المتساوية من الغازات المختلفة تحوي العدد نفسه من الجسيمات. هل هو صادق؟ حرّك المنزلقات وحاسبه بنفسك!</p>
+  <span class="badge">🔒 الضغط = 1 atm &nbsp;|&nbsp; الحرارة = 0°م (مثبّتان بقرار حكومي)</span>
+</header>
+
+<main class="stage" id="stage"></main>
+
+<section class="panel" aria-live="polite">
+  <h3>⚖️ محكمة أفوجادرو</h3>
+  <div class="verdict" id="verdict"></div>
+  <table>
+    <thead><tr><th>المقارنة</th><th>هل الحجمان متساويان؟</th><th>هل عدد الجسيمات متساوٍ؟</th></tr></thead>
+    <tbody id="rows"></tbody>
+  </table>
+  <p class="note">لاحظ العمود الأخير: لا يتساوى العدد إلا إذا تساوى الحجم، ولا يهم أبداً إن كان الغاز خفيفاً كالهيدروجين أو ثقيلاً كثاني أكسيد الكربون. الجسيمات الثقيلة أبطأ فقط، لكنها ليست أكثر ازدحاماً.</p>
+  <div class="btns">
+    <button id="eq">🤝 ساوِ الحجوم</button>
+    <button id="rnd">🎲 حجوم عشوائية</button>
+    <button id="cha">😈 فرّق بينها</button>
+  </div>
+</section>
+<footer>محاكاة مبسطة لغاز مثالي. عند الظروف المعيارية: 22.4 لتر = 1 مول = 6.022 × 10<sup>23</sup> جسيم، أياً كان الغاز.</footer>
+</div>
+
+<script>
+const W=300,H=300,MAXV=5,PER_L=10,MOLAR=22.414,NA=6.022e23;
+const gases=[
+ {n:'الهيدروجين',s:'H₂',m:2,r:8,sp:150,c:'#ff5d8f',V:2,
+  lo:['أنا خفيف جداً، حتى الميزان لا يشعر بي. 🪶','وعاء ضيق؟ لا بأس، سأتزلج على الجدران!'],
+  hi:['وعاء واسع! سأركض ماراثوناً بلا توقف. 🏃','خفيف الظل وخفيف الوزن، والعدد؟ عدد محترم!']},
+ {n:'الأكسجين',s:'O₂',m:32,r:11,sp:75,c:'#2f9bff',V:3.5,
+  lo:['الزحام خانق! ومع ذلك أنا من يتنفس عنكم. 😤','ضاق الوعاء، أرجو من المنظمين فتح نافذة.'],
+  hi:['مساحة رحبة! أخيراً أستطيع التنفس بحرية. 😮‍💨','كلما اتسع الوعاء جاء أصدقاء جدد، هكذا تقول القاعدة.']},
+ {n:'ثاني أكسيد الكربون',s:'CO₂',m:44,r:13,sp:62,c:'#3fbf7f',V:5,
+  lo:['أنا ثقيل الدم وثقيل الكتلة، فلا تضغطوني! 😵','وعاء صغير؟ سأعدّل عدد الحضور بما يناسب.'],
+  hi:['الوعاء كبير وأنا ثقيل، سأتحرك بوقار واتزان. 🎩','أبطأ منكم جميعاً، لكن عددي مثل عددكم يا أصدقاء.']}
+];
+const stage=document.getElementById('stage');
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const tgt=g=>Math.round(g.V*PER_L);
+let wasAll=false;
+const sup=e=>String(e).replace(/-/g,'⁻').replace(/\d/g,d=>'⁰¹²³⁴⁵⁶⁷⁸⁹'[d]);
+gases.forEach((g,i)=>{
+  const el=document.createElement('article');el.className='gas';el.style.setProperty('--c',g.c);
+  el.innerHTML=`<h2><span class="sym" style="background:${g.c}">${g.s}</span></h2>
+  <p class="mass">${g.n} · كتلة الجزيء ≈ ${g.m} u</p>
+  <canvas width="${W}" height="${H}" aria-label="وعاء ${g.n}"></canvas>
+  <label class="sl">الحجم <input type="range" min="1" max="5" step="0.5" value="${g.V}" aria-label="حجم ${g.n}"><output></output></label>
+  <div class="count"><div><small>عدد الجسيمات</small><b></b></div><div><small>N ÷ V</small><b class="ratio"></b></div></div>
+  <div class="real"></div>
+  <div class="bubble"></div>`;
+  stage.appendChild(el);
+  g.cv=el.querySelector('canvas');g.ctx=g.cv.getContext('2d');g.inp=el.querySelector('input');
+  g.out=el.querySelector('output');g.num=el.querySelector('.count b');g.rat=el.querySelector('.ratio');
+  g.real=el.querySelector('.real');g.bub=el.querySelector('.bubble');g.p=[];g.h=g.V*H/MAXV;
+  g.inp.addEventListener('input',()=>setV(g,+g.inp.value,true));
+  g.out.textContent=g.V.toFixed(1)+' L';g.bub.textContent=['اضغط وحرّك المنزلق، أنا جاهز للتجربة! 🧪','أنا هنا للمشاركة في العلم فقط. 🔬','أحضرت جسيماتي كلها. 🎒'][i];
+});
+function setV(g,v,talk){
+  g.V=v;g.inp.value=v;g.out.textContent=v.toFixed(1)+' L';
+  if(talk)g.bub.textContent=pick(v<=2.5?g.lo:g.hi);
+  update();
+}
+function spawn(g){
+  const top=H-g.h,a=Math.random()*6.283,s=g.sp*(.7+Math.random()*.6);
+  g.p.push({x:g.r+Math.random()*(W-2*g.r),y:top+g.r+Math.random()*Math.max(1,g.h-2*g.r),vx:Math.cos(a)*s,vy:Math.sin(a)*s});
+}
+function update(){
+  gases.forEach(g=>{
+    const n=tgt(g);g.num.textContent=n;g.rat.textContent=(n/g.V).toFixed(0);
+    const real=g.V/MOLAR*NA,e=Math.floor(Math.log10(real));
+    g.real.innerHTML=`الواقع: ≈ ${(real/10**e).toFixed(2)} × 10${sup(e)} جسيم`;
+  });
+  const eq=(a,b)=>Math.abs(a.V-b.V)<.01,pairs=[[0,1],[0,2],[1,2]];
+  document.getElementById('rows').innerHTML=pairs.map(([a,b])=>{
+    const A=gases[a],B=gases[b],v=eq(A,B),c=tgt(A)===tgt(B);
+    return `<tr><td>${A.s} مقابل ${B.s}</td><td class="${v?'y':'n'}">${v?'✅ نعم':'❌ لا'}</td><td class="${c?'y':'n'}">${c?'✅ نعم':'❌ لا'}</td></tr>`;
+  }).join('');
+  const k=pairs.filter(([a,b])=>eq(gases[a],gases[b])).length,v=document.getElementById('verdict');
+  const all=k===3;
+  v.className='verdict'+(all?' win':'');
+  v.textContent=all?'🎉 تساوت الحجوم الثلاثة فتساوت الجسيمات! أفوجادرو يرفع حاجبه بفخر.'
+    :k>0?'🤨 حجمان فقط تساويا، فتساوى عدد جسيماتهما، أما الثالث فيشعر بالتهميش.'
+    :'🤷 ثلاثة أحجام مختلفة وثلاثة أعداد مختلفة. جرّب أن تساوي حجمين وراقب الجدول.';
+  if(all&&!wasAll)party();
+  wasAll=all;
+}
+function party(){
+  if(matchMedia('(prefers-reduced-motion:reduce)').matches)return;
+  for(let i=0;i<26;i++){const s=document.createElement('span');s.className='pop';s.textContent=pick(['🎈','💨','🧪','✨','🥳','⚗️']);
+    s.style.left=Math.random()*96+'vw';s.style.animationDelay=Math.random()*.7+'s';document.body.appendChild(s);setTimeout(()=>s.remove(),3400);}
+}
+function draw(g){
+  const c=g.ctx,top=H-g.h,ink='#1d1b3a';
+  c.clearRect(0,0,W,H);
+  c.fillStyle='rgba(120,130,200,.12)';c.fillRect(0,0,W,H);
+  c.fillStyle=g.c+'33';c.fillRect(0,top,W,g.h);
+  c.fillStyle=ink;c.fillRect(W/2-5,0,10,top);
+  c.fillRect(0,top-12,W,12);
+  c.fillStyle='#ffd23f';c.fillRect(0,top-12,W,5);
+  c.fillStyle=ink;c.font='bold 11px Tahoma,sans-serif';
+  for(let i=1;i<=MAXV;i++){const y=H-i*H/MAXV;c.fillRect(0,y-1,i%1?10:16,2);c.fillText(i+'L',20,y+4);}
+  g.p.forEach(p=>{
+    c.beginPath();c.arc(p.x,p.y,g.r,0,6.283);c.fillStyle=g.c;c.fill();c.lineWidth=2;c.strokeStyle=ink;c.stroke();
+    const m=Math.hypot(p.vx,p.vy)||1,ox=p.vx/m*g.r*.12,oy=p.vy/m*g.r*.12;
+    [-1,1].forEach(d=>{const ex=p.x+d*g.r*.38,ey=p.y-g.r*.15;
+      c.beginPath();c.arc(ex,ey,g.r*.3,0,6.283);c.fillStyle='#fff';c.fill();
+      c.beginPath();c.arc(ex+ox,ey+oy,g.r*.14,0,6.283);c.fillStyle=ink;c.fill();});
+  });
+  c.lineWidth=5;c.strokeStyle=ink;c.strokeRect(2.5,2.5,W-5,H-5);
+}
+let last=performance.now();
+function loop(t){
+  const dt=Math.min(.05,(t-last)/1000);last=t;
+  gases.forEach(g=>{
+    g.h+=(g.V*H/MAXV-g.h)*Math.min(1,dt*8);
+    const n=tgt(g);
+    if(g.p.length<n)spawn(g);else if(g.p.length>n)g.p.pop();
+    const top=H-g.h,r=g.r;
+    g.p.forEach(p=>{
+      p.x+=p.vx*dt;p.y+=p.vy*dt;
+      if(p.x<r){p.x=r;p.vx=Math.abs(p.vx)}else if(p.x>W-r){p.x=W-r;p.vx=-Math.abs(p.vx)}
+      if(p.y<top+r){p.y=top+r;p.vy=Math.abs(p.vy)}else if(p.y>H-r){p.y=H-r;p.vy=-Math.abs(p.vy)}
+    });
+    draw(g);
+  });
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+document.getElementById('eq').onclick=()=>{const v=gases[0].V;gases.forEach(g=>setV(g,v,true));};
+document.getElementById('rnd').onclick=()=>gases.forEach(g=>setV(g,1+Math.floor(Math.random()*9)/2,true));
+document.getElementById('cha').onclick=()=>{const vs=[1.5,3,4.5];gases.forEach((g,i)=>setV(g,vs[i],true));};
+update();
+</script>
+</body>
+</html>
