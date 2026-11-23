@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ترتيب الإلكترونات في الذرة</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f4f7fb;--card:#fff;--tx:#1b2433;--mut:#6b7788;--pri:#2f6fed;--ok:#1f9d55;--bad:#d93a3a;--line:#c6d0de;--chip:#eaf0ff;--bub:#fff6d6;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#111826;--card:#1a2335;--tx:#eef2f9;--mut:#9aa7bb;--pri:#6c9bff;--ok:#3ecf80;--bad:#ff6b6b;--line:#3a4760;--chip:#26334d;--bub:#3a3420}}
+:root[data-theme="dark"]{--bg:#111826;--card:#1a2335;--tx:#eef2f9;--mut:#9aa7bb;--pri:#6c9bff;--ok:#3ecf80;--bad:#ff6b6b;--line:#3a4760;--chip:#26334d;--bub:#3a3420}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:'Cairo',Tahoma,Arial,sans-serif;min-height:100%}
+main{max-width:760px;margin:0 auto;padding:16px}
+h1{font-size:1.5rem;margin:6px 0 4px;font-weight:900;text-align:center}
+.sub{color:var(--mut);text-align:center;margin:0 0 14px;font-size:.95rem}
+.bar{display:flex;justify-content:space-between;font-weight:700;margin-bottom:8px;font-size:.95rem}
+.prog{height:8px;background:var(--line);border-radius:8px;overflow:hidden;margin-bottom:14px}
+.prog i{display:block;height:100%;width:0;background:var(--pri);transition:width .4s}
+.card{background:var(--card);border-radius:18px;padding:16px;box-shadow:0 2px 12px rgba(0,0,0,.08)}
+.name{text-align:center;font-size:1.15rem;font-weight:700;margin-bottom:8px}
+#bub{background:var(--bub);border-radius:14px;padding:10px 14px;text-align:center;font-weight:700;margin-bottom:12px;min-height:46px}
+#zone{direction:ltr;position:relative;display:flex;align-items:center;flex-wrap:wrap;justify-content:center;padding:10px;border:2px dashed var(--line);border-radius:16px;min-height:120px}
+#zone.over{border-color:var(--pri);background:rgba(47,111,237,.08)}
+.atom{width:90px;height:90px;margin:5px;border-radius:50%;background:radial-gradient(circle at 30% 30%,var(--pri),#1c3f99);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:900;font-size:1.6rem;line-height:1;flex:none;position:relative}
+.atom small{font-size:.65rem;opacity:.9}
+.eyes{display:flex;margin-bottom:3px}
+.eyes i{width:18px;height:18px;margin:0 2px;background:#fff;border-radius:50%;position:relative}
+.eyes i:after{content:"";position:absolute;width:8px;height:8px;background:#111;border-radius:50%;top:5px;left:5px;transition:.2s}
+.atom.sad .eyes i:after{top:8px;height:5px}
+.atom.jump{animation:jp .6s}
+.atom.sad{animation:sh .4s}
+@keyframes jp{40%{transform:translateY(-22px) rotate(10deg)}}
+.slot{min-width:64px;height:48px;margin:5px;border:2px dashed var(--line);border-radius:12px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1.1rem;color:var(--mut);padding:0 8px}
+.slot.next{border-color:var(--pri);color:var(--pri)}
+.slot.ok{border:2px solid var(--ok);background:rgba(31,157,85,.12);color:var(--ok)}
+.shake{animation:sh .4s}
+@keyframes sh{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+#tray{direction:ltr;display:flex;flex-wrap:wrap;justify-content:center;margin-top:14px;min-height:56px}
+.chip{margin:5px;background:var(--chip);color:var(--tx);border:2px solid var(--pri);border-radius:12px;padding:8px 14px;font-weight:900;font-size:1.15rem;cursor:grab;-webkit-user-select:none;user-select:none;touch-action:none;-webkit-touch-callout:none}
+.ghost{position:fixed;-webkit-transform:translate(-50%,-50%);transform:translate(-50%,-50%);pointer-events:none;z-index:50;box-shadow:0 6px 18px rgba(0,0,0,.3);margin:0}
+#badge{position:absolute;top:0;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;font-size:4.5rem;font-weight:900;pointer-events:none;opacity:0}
+#badge.show{animation:pop .9s}
+@keyframes pop{0%{opacity:0;transform:scale(.4)}25%{opacity:1;transform:scale(1.2)}80%{opacity:1}100%{opacity:0;transform:scale(1)}}
+.btn{display:block;margin:14px auto 0;background:var(--pri);color:#fff;border:0;border-radius:12px;padding:10px 26px;font-size:1.05rem;font-weight:700;font-family:inherit;cursor:pointer}
+.btn[hidden]{display:none}
+.skip{background:transparent;color:var(--mut);border:2px solid var(--line);margin-top:10px}
+.hint{color:var(--mut);font-size:.85rem;text-align:center;margin-top:10px}
+</style>
+</head>
+<body>
+<main>
+<h1>⚛️ مغامرة الإلكترونات المجنونة</h1>
+<p class="sub">٣٦ عنصراً من الهيدروجين إلى الكريبتون! اسحب تحت المستوى الصحيح بجانب الذرة من اليسار إلى اليمين</p>
+<div class="bar"><span id="lvl"></span><span id="score"></span></div>
+<div class="prog"><i id="pg"></i></div>
+<div class="card" id="game">
+  <div class="name" id="name"></div>
+  <div id="bub"></div>
+  <div id="zone"></div>
+  <div id="tray"></div>
+  <button class="btn" id="nx" hidden></button>
+  <button class="btn skip" id="sk">تخطي هذا العنصر ⏭</button>
+  <div class="hint">يمكنك أيضاً الضغط على تحت المستوى بدل سحبه</div>
+</div>
+</main>
+<script>
+var ATOMS=[[1, 'H', 'هيدروجين', 'أنا هيدروجين! إلكترون واحد فقط… عايش وحيد 😢'], [2, 'He', 'هيليوم', 'هيليوم! أطيّر البالونات 🎈 وأخلّي صوتك كرتوني'], [3, 'Li', 'ليثيوم', 'ليثيوم! بطارية جوالك تحبني 🔋'], [4, 'Be', 'بيريليوم', 'بيريليوم! اسمي صعب بس قلبي خفيف 🪶'], [5, 'B', 'بورون', 'بورون! أنا في الزجاج المقاوم للحرارة 🧪'], [6, 'C', 'كربون', 'كربون! الألماس والفحم كلاهما أنا 💎 (متعدد المواهب)'], [7, 'N', 'نيتروجين', 'نيتروجين! ٧٨٪ من الهواء أنا ومع ذلك ما أحد يشكرني 😤'], [8, 'O', 'أكسجين', 'أكسجين! بدوني ما تقدر تكمل الاختبار 😮\u200d💨'], [9, 'F', 'فلور', 'فلور! أحمي أسنانك 🦷 من معجون الأسنان'], [10, 'Ne', 'نيون', 'نيون! أنا اللي يضيء لافتات المطاعم ✨'], [11, 'Na', 'صوديوم', 'صوديوم! مع الكلور أصير ملح طعامك 🧂 بس لا ترميني بالماء!'], [12, 'Mg', 'ماغنسيوم', 'ماغنسيوم! أحترق بضوء أبيض ساطع ✨ لا تنظر مباشرة!'], [13, 'Al', 'ألومنيوم', 'ألومنيوم! علبة الكولا أنا 🥤'], [14, 'Si', 'سيليكون', 'سيليكون! عقل جوالك أنا 📱'], [15, 'P', 'فوسفور', 'فوسفور! أضيء بالظلام 🌙 وعود الثقاب أنا'], [16, 'S', 'كبريت', 'كبريت! ريحتي مثل البيض الفاسد 🥚 آسف!'], [17, 'Cl', 'كلور', 'كلور! أنا ريحة المسبح 🏊 وعيونك تحمرّ مني'], [18, 'Ar', 'أرغون', 'أرغون! خامل وكسول، ما أتفاعل مع أحد 😴'], [19, 'K', 'بوتاسيوم', 'بوتاسيوم! الموز غني بي 🍌'], [20, 'Ca', 'كالسيوم', 'كالسيوم! اشرب حليب عشان عظامك تقوى 🥛'], [21, 'Sc', 'سكانديوم', 'سكانديوم! نادر ومحد يعرفني 🕵️'], [22, 'Ti', 'تيتانيوم', 'تيتانيوم! قوي وخفيف… رياضي الذرات 💪'], [23, 'V', 'فاناديوم', 'فاناديوم! أقوّي الفولاذ 🔩'], [24, 'Cr', 'كروم', 'كروم! لمعة السيارات أنا ✨ وعندي استثناء، انتبه! ⚠️'], [25, 'Mn', 'منغنيز', 'منغنيز! أنا في البطاريات 🔋 واسمي صعب النطق'], [26, 'Fe', 'حديد', 'حديد! ثقيل بس قلبي طيب 🧲'], [27, 'Co', 'كوبالت', 'كوبالت! أعطي اللون الأزرق الجميل 💙'], [28, 'Ni', 'نيكل', 'نيكل! أنا في العملات المعدنية 🪙'], [29, 'Cu', 'نحاس', 'نحاس! أوصّل الكهرباء ⚡ وعندي استثناء كمان، انتبه! ⚠️'], [30, 'Zn', 'خارصين', 'خارصين (زنك)! عندي مناعة قوية 🛡️'], [31, 'Ga', 'غاليوم', 'غاليوم! أذوب في يدك 🫠 ولا أحد يصدق'], [32, 'Ge', 'جرمانيوم', 'جرمانيوم! أشباه الموصلات عائلتي 💻'], [33, 'As', 'زرنيخ', 'زرنيخ! سمعتي سيئة في المسلسلات ☠️'], [34, 'Se', 'سيلينيوم', 'سيلينيوم! قليل مني يكفي 🌰'], [35, 'Br', 'بروم', 'بروم! سائل أحمر… ولا تشمّني 😷'], [36, 'Kr', 'كريبتون', 'كريبتون! من كوكب سوبرمان 🦸 احذر الكريبتونايت!']];
+var GOOD=['صح! أنت عبقرينو 🧠','ممتاز! أينشتاين يغار منك 😎','يا سلام! كملّ كذا 🔥','إلكترون سعيد ومرتاح في مكانه 🏠','أحسنت! حتى الذرة صفقت لك 👏'];
+var BAD=['أوووه! الإلكترون ما يرضى يقعد هنا 🙅','خطأ! الذرة تضحك عليك 😂','لا لا لا! غلط يا بطل 🤦','حتى الأوفباو انصدم 😱','جرّب مرة ثانية… الإلكترون ينتظر 🕐'];
+var ORD=['1s','2s','2p','3s','3p','4s','3d','4p'],CAP={s:2,p:6,d:10},SUP='⁰¹²³⁴⁵⁶⁷⁸⁹';
+function sup(n){return String(n).split('').map(function(d){return SUP[d]}).join('')}
+function lab(a){return a[0]+sup(a[1])}
+function cfg(z){if(z===24||z===29){var r0=cfg(18).concat([]);r0.push(['4s',1],['3d',z===24?5:10]);return r0}var r=[],n=z;for(var i=0;i<ORD.length&&n>0;i++){var o=ORD[i],c=Math.min(n,CAP[o[1]]);r.push([o,c]);n-=c}return r}
+function $(id){return document.getElementById(id)}
+function pick(a){return a[Math.random()*a.length|0]}
+function shuffle(a){for(var i=a.length-1;i>0;i--){var j=Math.random()*(i+1)|0,t=a[i];a[i]=a[j];a[j]=t}return a}
+var skipped=0,idx=0,step=0,exp=[],locked=false,score=0,mistakes=0,HAS_PTR=!!window.PointerEvent;
+
+function start(){
+  var A=ATOMS[idx],z=A[0];exp=cfg(z);step=0;locked=false;mistakes=0;
+  var set={};exp.forEach(function(e){set[lab(e)]=1});
+  shuffle(exp.slice()).slice(0,Math.min(3,exp.length)).forEach(function(e){
+    var max=CAP[e[0][1]],opts=[];for(var k=1;k<=max;k++)if(!set[lab([e[0],k])])opts.push(k);
+    if(opts.length)set[lab([e[0],pick(opts)])]=1;
+  });
+  if(ORD[exp.length])set[lab([ORD[exp.length],1])]=1;
+  $('name').textContent='الذرة: '+A[2]+' ('+A[1]+') — العدد الذري = '+z;
+  $('lvl').textContent='المرحلة '+(idx+1)+' من '+ATOMS.length;
+  $('score').textContent='النقاط: '+score;
+  $('pg').style.width=(idx/ATOMS.length*100)+'%';
+  $('bub').textContent=A[3];$('nx').hidden=true;
+  var h='<div class="atom" id="atom"><small>'+z+'</small><div class="eyes"><i></i><i></i></div>'+A[1]+'</div>';
+  exp.forEach(function(_,i){h+='<div class="slot" id="s'+i+'">؟</div>'});
+  $('zone').innerHTML=h+'<div id="badge"></div>';
+  markNext();
+  var tray=$('tray');tray.innerHTML='';
+  shuffle(Object.keys(set)).forEach(function(k){
+    var b=document.createElement('div');b.className='chip';b.textContent=k;b.setAttribute('data-k',k);
+    if(HAS_PTR)b.addEventListener('pointerdown',function(e){down(e,b)});
+    else b.addEventListener('click',function(){attempt(b)});
+    tray.appendChild(b);
+  });
+}
+function markNext(){var s=document.querySelectorAll('.slot');for(var i=0;i<s.length;i++){if(i===step)s[i].classList.add('next');else s[i].classList.remove('next')}}
+function anim(el,c){el.classList.remove(c);void el.offsetWidth;el.classList.add(c)}
+function flash(sym,color){var b=$('badge');b.textContent=sym;b.style.color=color;anim(b,'show')}
+function inZone(e){var r=$('zone').getBoundingClientRect(),p=14;return e.clientX>r.left-p&&e.clientX<r.right+p&&e.clientY>r.top-p&&e.clientY<r.bottom+p}
+function down(e,chip){
+  if(locked)return;e.preventDefault();
+  var g=chip.cloneNode(true);g.className='chip ghost';document.body.appendChild(g);
+  var sx=e.clientX,sy=e.clientY,moved=false;
+  function place(ev){g.style.left=ev.clientX+'px';g.style.top=ev.clientY+'px'}place(e);
+  function mv(ev){if(Math.abs(ev.clientX-sx)+Math.abs(ev.clientY-sy)>6)moved=true;place(ev);$('zone').classList.toggle('over',inZone(ev))}
+  function up(ev){
+    window.removeEventListener('pointermove',mv);window.removeEventListener('pointerup',up);window.removeEventListener('pointercancel',up);
+    g.parentNode&&g.parentNode.removeChild(g);$('zone').classList.remove('over');
+    if(!moved||inZone(ev))attempt(chip);
+  }
+  window.addEventListener('pointermove',mv);window.addEventListener('pointerup',up);window.addEventListener('pointercancel',up);
+}
+function attempt(chip){
+  if(locked)return;
+  var slot=$('s'+step),atom=$('atom');
+  if(chip.getAttribute('data-k')===lab(exp[step])){
+    slot.textContent=chip.getAttribute('data-k');slot.classList.add('ok');slot.classList.remove('next');
+    chip.parentNode.removeChild(chip);step++;flash('✓','#1f9d55');markNext();
+    atom.classList.remove('sad');anim(atom,'jump');
+    if(step===exp.length){
+      locked=true;var pts=mistakes===0?10:Math.max(3,10-mistakes*2);score+=pts;
+      $('score').textContent='النقاط: '+score;$('pg').style.width=((idx+1)/ATOMS.length*100)+'%';
+      $('bub').textContent=(mistakes===0?'🎉 بدون ولا غلطة! أنت أسطورة الكيمياء (+':'✅ خلّصت الذرة بعد شوية عرق 😅 (+')+pts+')';
+      $('nx').textContent=idx===ATOMS.length-1?'الوصول إلى كريبتون 🚀':'الذرة التالية ◀';$('nx').hidden=false;
+    }else $('bub').textContent=pick(GOOD);
+  }else{
+    mistakes++;flash('✗','#d93a3a');anim(chip,'shake');anim(slot,'shake');
+    atom.classList.remove('jump');atom.classList.add('sad');anim(atom,'shake');
+    $('bub').textContent=pick(BAD);
+  }
+}
+$('sk').onclick=function(){skipped++;$('nx').onclick()};
+$('nx').onclick=function(){
+  if(idx===ATOMS.length-1){
+    var max=(ATOMS.length-skipped)*10,t=max===0?'😄 تخطيت كل العناصر! ارجع جرّب واحداً على الأقل':score>=max*0.9?'🦸 سوبرمان الكيمياء! كريبتون استقبلك بالورود':score>=max*0.6?'🧑‍🔬 عالم واعد! أكمل وتصير أينشتاين':'🐣 بداية حلوة… حتى الإلكترونات تحتاج وقت تتعوّد';
+    $('game').innerHTML='<div class="name" style="font-size:1.5rem">🚀 وصلت إلى كوكب كريبتون!</div><p style="text-align:center;font-size:1.2rem">نقاطك: <b>'+score+'</b> من '+max+'</p><p style="text-align:center;font-weight:700">'+t+'</p><button class="btn" onclick="location.reload()">العب من جديد</button>';
+    return;
+  }
+  idx++;start();
+};
+start();
+</script>
+</body>
+</html>
